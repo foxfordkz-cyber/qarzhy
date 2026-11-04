@@ -6,7 +6,7 @@
 <title>Отбасы бюджеті</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Отбасының кірісі мен шығысын жазып, айдың қалдығын көруге арналған сайт">
-<meta name="theme-color" content="#f2f5f3">
+<meta name="theme-color" content="#f2f6f3">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2317855a'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 25v-9'/%3E%3Cpath d='M16 16c0-4.6 3-7.6 8-7.6 0 4.9-3.2 7.6-8 7.6z'/%3E%3Cpath d='M16 19c0-3.4-2.3-5.8-6.4-5.8 0 3.7 2.6 5.8 6.4 5.8z'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,47 +15,57 @@
   try { var t = localStorage.getItem('otbasy-budget:v1:theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
 <style>
-/* Layout: month totals on top; desktop = sticky entry form on the left + analytics and history on the right;
-   phone = sticky balance bar with the add button, then charts, people and history; the form opens as a bottom sheet. */
+/* Layout: dashboard shell like the client's sample. Header (brand, search, actions) over a sidebar + 12-column card grid.
+   Phone: sticky balance bar with the add button, then summary, charts, people, history, then the rest. */
 :root {
-  /* neutrals with a slight green bias */
-  --bg: #f2f5f3;
+  --bg: #f2f6f3;
   --surface: #ffffff;
-  --surface-2: #f4f7f5;
-  --line: #e3e9e5;
-  --line-strong: #d3dcd6;
+  --surface-2: #f4f8f5;
+  --line: #e3eae5;
+  --line-strong: #d1dbd4;
   --ink: #0f1a14;
   --ink-2: #46524b;
   --ink-3: #69746d;
-  /* one accent */
   --accent: #17855a;
   --accent-hover: #12704b;
   --accent-soft: #e3f2ea;
+  --accent-soft-2: #d2ebde;
   --accent-ink: #0f5f40;
   --on-accent: #ffffff;
-  --meter-track: #c9e6d7;
   --pos-ink: #0f6b47;
-  /* semantic */
   --neg: #c4383a;
   --neg-soft: #fbecec;
   --on-neg: #ffffff;
-  /* categories (validated set, all pairs) */
+  --warn-soft: #fdf3dc;
+  --warn-ink: #8a5a00;
   --c-food: #eb6834;
   --c-transport: #1497b8;
   --c-home: #6250d6;
   --c-other: #c2458a;
-  /* depth */
-  --shadow-1: 0 1px 2px rgba(15, 40, 27, .04), 0 2px 8px rgba(15, 40, 27, .05);
-  --shadow-2: 0 2px 6px rgba(15, 40, 27, .06), 0 10px 28px rgba(15, 40, 27, .10);
+  --hero-a: #e2f3e9;
+  --hero-b: #f3faf6;
+  --ill-leaf: #b9e0c9;
+  --ill-leaf-2: #7fc59c;
+  --ill-leaf-3: #4ea677;
+  --ill-coin: #f4bf3f;
+  --ill-coin-d: #d9971b;
+  --ill-pink: #f6b3c0;
+  --ill-pink-d: #e78ea0;
+  --ill-dark: #1f2d36;
+  --ill-dark-2: #344652;
+  --ill-sky: #e4f1f7;
+  --ill-city: #b7d3e2;
+  --ill-city-2: #d3e5ee;
+  --ill-shadow: rgba(23, 133, 90, .10);
+  --shadow-1: 0 1px 2px rgba(15, 40, 27, .04), 0 2px 10px rgba(15, 40, 27, .05);
+  --shadow-2: 0 2px 6px rgba(15, 40, 27, .06), 0 12px 32px rgba(15, 40, 27, .10);
   --shadow-3: 0 24px 64px rgba(10, 28, 18, .22);
-  /* type */
   --font-display: "Onest", "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  /* shape */
-  --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
   --r-xl: 20px;
+  --top-h: 72px;
 }
 :root[data-theme="dark"] {
   --bg: #0c110e;
@@ -69,17 +79,34 @@
   --accent: #3dbb84;
   --accent-hover: #55c895;
   --accent-soft: #15301f;
+  --accent-soft-2: #1c3f2a;
   --accent-ink: #7fdcb0;
   --on-accent: #04130b;
-  --meter-track: #1f4a33;
   --pos-ink: #6fd3a3;
   --neg: #ef7b7b;
   --neg-soft: #3a1d1e;
   --on-neg: #1a0606;
+  --warn-soft: #33290f;
+  --warn-ink: #f0c56a;
   --c-food: #e06a35;
   --c-transport: #1c9abd;
   --c-home: #7a6be2;
   --c-other: #b43f7c;
+  --hero-a: #123122;
+  --hero-b: #0f1f17;
+  --ill-leaf: #1e4a33;
+  --ill-leaf-2: #2f7350;
+  --ill-leaf-3: #3f9467;
+  --ill-coin: #e5b03a;
+  --ill-coin-d: #b47d12;
+  --ill-pink: #d9909f;
+  --ill-pink-d: #c07083;
+  --ill-dark: #0a1116;
+  --ill-dark-2: #22323c;
+  --ill-sky: #13222a;
+  --ill-city: #2b4655;
+  --ill-city-2: #1e333f;
+  --ill-shadow: rgba(0, 0, 0, .35);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, .3), 0 0 0 1px rgba(255, 255, 255, .03);
   --shadow-2: 0 4px 16px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .04);
   --shadow-3: 0 24px 64px rgba(0, 0, 0, .6);
@@ -90,17 +117,11 @@
 html { -webkit-text-size-adjust: 100%; }
 html.lock, html.lock body { overflow: hidden; }
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
+  margin: 0; background: var(--bg); color: var(--ink);
   font: 400 15px/1.5 var(--font-body);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
-body::before {
-  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
-  z-index: 30; background: var(--bg);
-}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 45; background: var(--bg); }
 button, input { font: inherit; color: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
@@ -110,45 +131,21 @@ svg { flex: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-.page {
-  max-width: 1280px; margin: 0 auto;
-  padding-block: 16px 40px;
+.app {
+  max-width: 1480px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: flex; flex-direction: column; gap: 16px;
+  padding-block: 0 40px;
 }
-@media (min-width: 960px) {
-  .page {
-    padding-block: 28px 56px;
-    padding-left: max(24px, env(safe-area-inset-left, 0px));
-    padding-right: max(24px, env(safe-area-inset-right, 0px));
-    gap: 24px;
-  }
-}
-
-/* ---------- header ---------- */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.logo {
-  width: 40px; height: 40px; border-radius: 12px; flex: none;
-  display: grid; place-items: center; background: var(--accent); color: var(--on-accent);
-}
-.brand-name { font: 600 19px/1.2 var(--font-display); letter-spacing: -0.015em; white-space: nowrap; }
-.brand-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
-.top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
-@media (max-width: 599px) {
-  .brand { gap: 10px; }
-  .brand-sub { display: none; }
-  .logo { width: 36px; height: 36px; border-radius: 10px; }
-  .brand-name { font-size: 16px; }
-  .top-actions { gap: 4px; }
+@media (min-width: 720px) {
+  .app { padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
 }
 
 /* ---------- buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 40px; padding: 0 16px; border: 0; border-radius: var(--r-md);
-  font-size: 14px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer;
+  font-size: 14px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; text-decoration: none;
   transition: background-color .15s, box-shadow .15s, transform .1s, color .15s;
 }
 .btn:active { transform: translateY(1px); }
@@ -156,36 +153,134 @@ svg { flex: none; }
 .btn-primary:hover { background: var(--accent-hover); }
 .btn-ghost { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line); }
 .btn-ghost:hover { background: var(--surface-2); }
+.btn-soft { background: var(--accent-soft); color: var(--accent-ink); }
+.btn-soft:hover { background: var(--accent-soft-2); }
 .btn-danger { background: var(--neg); color: var(--on-neg); }
 .btn-danger:hover { filter: brightness(.95); }
-.btn-lg { height: 48px; font-size: 15px; border-radius: 14px; }
+.btn-lg { height: 48px; padding: 0 20px; font-size: 15px; border-radius: 14px; }
 .btn-block { width: 100%; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
 .icon-btn {
-  width: 40px; height: 40px; border: 0; border-radius: var(--r-md); flex: none;
+  position: relative; width: 40px; height: 40px; border: 0; border-radius: var(--r-md); flex: none;
   display: grid; place-items: center; background: transparent; color: var(--ink-2); cursor: pointer;
   transition: background-color .15s, color .15s;
 }
 .icon-btn:hover { background: var(--surface); color: var(--ink); }
-@media (max-width: 599px) {
-  #demoBtn { padding: 0 12px; font-size: 13px; height: 36px; }
-  #themeBtn { width: 36px; height: 36px; }
+.link {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 0; border: 0; background: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--accent-ink); white-space: nowrap; text-decoration: none;
 }
-@media (max-width: 419px) { #demoBtn svg { display: none; } }
+.link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 12px; height: 64px; }
+@media (min-width: 720px) {
+  .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; height: var(--top-h); gap: 16px; background: var(--bg); }
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; color: inherit; text-decoration: none; }
+@media (min-width: 1280px) { .brand { min-width: 240px; flex: none; } }
+.logo { width: 40px; height: 40px; border-radius: 12px; flex: none; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+.brand-name { font: 600 19px/1.2 var(--font-display); letter-spacing: -0.015em; white-space: nowrap; }
+.brand-sub { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; white-space: nowrap; }
+.menu-btn { margin-left: -8px; }
+@media (min-width: 1280px) { .menu-btn { display: none; } }
+.search { position: relative; flex: 1 1 auto; max-width: 440px; display: flex; align-items: center; }
+.search svg { position: absolute; left: 14px; color: var(--ink-3); pointer-events: none; }
+.search input {
+  width: 100%; height: 44px; padding: 0 14px 0 42px; border: 0; border-radius: 14px;
+  background: var(--surface); box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line); font-size: 15px;
+}
+.search input::placeholder { color: var(--ink-3); }
+.search input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+.bell-wrap { position: relative; }
+.bell-dot { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--neg); box-shadow: 0 0 0 2px var(--bg); }
+.family {
+  display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px 0 4px; border: 0; border-radius: 999px;
+  background: transparent; cursor: pointer; text-align: left;
+}
+.family:hover { background: var(--surface); }
+.family-ava { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
+.family-name { display: block; font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+.family-sub { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.demo-top { display: none; }
+@media (max-width: 1099px) { .family-text { display: none; } .family { padding: 0 4px; } }
+@media (max-width: 719px) {
+  .search, .add-top, .family, .bell-wrap { display: none; }
+  .brand-sub { display: none; }
+  .logo { width: 36px; height: 36px; border-radius: 10px; }
+  .brand { gap: 10px; }
+  .brand-name { font-size: 16px; }
+  .demo-top { display: inline-flex; height: 36px; padding: 0 12px; font-size: 13px; }
+}
+@media (max-width: 379px) { .demo-top svg { display: none; } .logo { display: none; } }
+
+.pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: 320px; max-width: calc(100vw - 32px);
+  padding: 8px; border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-3);
+}
+.pop h3 { font-size: 14px; padding: 8px 10px 4px; }
+
+/* ---------- shell ---------- */
+.shell { display: block; }
+@media (min-width: 1280px) { .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; } }
+.main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 720px) { .main { gap: 20px; } }
+
+/* ---------- sidebar ---------- */
+.sidebar {
+  background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--shadow-1);
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 4px;
+}
+@media (min-width: 1280px) {
+  .sidebar { position: sticky; top: calc(var(--top-h) + env(safe-area-inset-top, 0px)); max-height: calc(100dvh - var(--top-h) - 24px); overflow-y: auto; }
+}
+.sidebar .side-head { display: none; }
+.nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  width: 100%; display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border: 0; border-radius: var(--r-md);
+  background: transparent; color: var(--ink-2); font-size: 14.5px; font-weight: 500; cursor: pointer; text-align: left;
+  transition: background-color .15s, color .15s;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.nav-item.is-active { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.nav-sep { height: 1px; background: var(--line); margin: 10px 12px; }
+.switch { margin-left: auto; width: 36px; height: 20px; border-radius: 999px; background: var(--line-strong); position: relative; transition: background-color .15s; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s; }
+.nav-item[aria-checked="true"] .switch { background: var(--accent); }
+.nav-item[aria-checked="true"] .switch::after { transform: translateX(16px); }
+.promo {
+  margin-top: 16px; border-radius: var(--r-lg); overflow: hidden; text-align: center;
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--ill-sky) 100%);
+}
+.promo-text { padding: 18px 14px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.promo-text .sprout { color: var(--accent); }
+.promo-text strong { font: 600 14px/1.35 var(--font-display); color: var(--ink); }
+.promo svg.city { display: block; width: 100%; height: auto; margin-top: 4px; }
+
+@media (max-width: 1279px) {
+  .sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 70; width: min(300px, 86vw); border-radius: 0 24px 24px 0; overflow-y: auto;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    transform: translateX(-105%); visibility: hidden; box-shadow: var(--shadow-3);
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
+  }
+  .sidebar.open { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
+  .sidebar .side-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 12px 12px; }
+  .sidebar .side-head strong { font: 600 16px var(--font-display); }
+}
 
 /* ---------- demo banner ---------- */
 .demo-banner {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px;
-  padding: 12px 12px 12px 16px; border-radius: var(--r-lg);
-  background: var(--ink); color: var(--surface);
+  padding: 12px 12px 12px 16px; border-radius: var(--r-lg); background: var(--ink); color: var(--surface);
 }
 .demo-banner .db-text { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 260px; }
-.demo-banner .db-ico {
-  width: 32px; height: 32px; border-radius: 10px; flex: none; display: grid; place-items: center;
-  background: color-mix(in srgb, var(--surface) 14%, transparent);
-}
+.demo-banner .db-ico { width: 32px; height: 32px; border-radius: 10px; flex: none; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 14%, transparent); }
 .demo-banner strong { display: block; font: 600 15px/1.3 var(--font-display); }
 .demo-banner span.db-sub { display: block; font-size: 13px; opacity: .78; }
-@media (max-width: 599px) {
+@media (max-width: 719px) {
   .demo-banner { flex-wrap: nowrap; padding: 10px 10px 10px 12px; }
   .demo-banner .db-text { flex: 1 1 auto; gap: 10px; }
   .demo-banner span.db-sub { display: none; }
@@ -194,55 +289,15 @@ svg { flex: none; }
 }
 @media (max-width: 379px) { .demo-banner .db-ico { display: none; } }
 
-/* ---------- period + kpis ---------- */
-.period { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; }
-.period h2 { font-size: 20px; }
-.period p { font-size: 13px; color: var(--ink-3); }
-@media (min-width: 960px) { .period h2 { font-size: 24px; } }
-
-.kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 960px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
-.kpi {
-  background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--shadow-1);
-  padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0;
-}
-@media (min-width: 960px) { .kpi { padding: 20px 24px 22px; gap: 10px; } }
-.kpi-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--ink-2); }
-.kpi-ico {
-  width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
-  background: var(--surface-2); color: var(--ink-2);
-}
-.kpi-value { font: 600 22px/1.1 var(--font-display); letter-spacing: -0.02em; white-space: nowrap; }
-.kpi-value.is-long { font-size: 19px; }
-@media (min-width: 960px) {
-  .kpi-value { font-size: 32px; }
-  .kpi-value.is-long { font-size: 28px; }
-}
-.kpi-note { font-size: 13px; color: var(--ink-3); min-height: 1.5em; }
-.kpi-balance { background: var(--accent-soft); box-shadow: none; }
-.kpi-balance .kpi-ico { background: var(--surface); color: var(--accent-ink); }
-.kpi-balance .kpi-label { color: var(--accent-ink); }
-.kpi-balance .kpi-value { color: var(--accent-ink); }
-.kpi-balance .kpi-note { color: var(--accent-ink); opacity: .85; }
-.kpi-balance.is-neg { background: var(--neg-soft); }
-.kpi-balance.is-neg .kpi-label, .kpi-balance.is-neg .kpi-value, .kpi-balance.is-neg .kpi-note, .kpi-balance.is-neg .kpi-ico { color: var(--neg); }
-.meter { height: 6px; border-radius: 3px; background: var(--meter-track); overflow: hidden; }
-.meter > span { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--accent); transition: width .4s cubic-bezier(.2, .8, .2, 1); }
-.kpi-balance.is-neg .meter { background: color-mix(in srgb, var(--neg) 25%, transparent); }
-@media (max-width: 959px) { .kpi-balance { display: none; } }
-
 /* ---------- phone balance bar ---------- */
 .mbar {
-  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 20;
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 20; isolation: isolate;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 10px 10px 10px 16px; border-radius: var(--r-xl);
 }
-.mbar::after {
-  content: ""; position: absolute; z-index: -1; inset: 0; border-radius: inherit;
-  background: var(--surface); box-shadow: var(--shadow-2);
-}
+.mbar::after { content: ""; position: absolute; z-index: -1; inset: 0; border-radius: inherit; background: var(--surface); box-shadow: var(--shadow-2); }
 .mbar::before {
-  content: ""; position: absolute; z-index: -1; top: -8px; bottom: -8px;
+  content: ""; position: absolute; z-index: -2; top: -8px; bottom: -8px;
   left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
   background: var(--bg);
 }
@@ -253,123 +308,145 @@ svg { flex: none; }
 .mbar-value.is-long { font-size: 20px; }
 .pill-demo { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 6px; background: var(--ink); color: var(--surface); font-size: 11px; font-weight: 600; }
 .mbar .btn { height: 44px; padding: 0 14px; }
-@media (min-width: 960px) { .mbar { display: none; } }
+@media (min-width: 720px) { .mbar { display: none; } }
 
-/* ---------- main layout ---------- */
-.layout { display: block; }
-.content { container: content / inline-size; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.charts { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
-@container content (min-width: 720px) { .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 960px) {
-  .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 24px; align-items: start; }
-  .content, .charts { gap: 24px; }
+/* ---------- cards + grid ---------- */
+.card {
+  background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--shadow-1);
+  padding: 20px; min-width: 0; display: flex; flex-direction: column;
+  scroll-margin-top: calc(var(--top-h) + 16px);
 }
-
-.card { background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--shadow-1); padding: 20px; min-width: 0; }
-@media (min-width: 960px) { .card { padding: 24px; } }
+@media (min-width: 720px) { .card { padding: 22px 24px; } }
+@media (max-width: 719px) { .card { padding: 18px 16px; scroll-margin-top: 84px; } }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.card-title { font-size: 17px; line-height: 1.3; }
+.card-title { font-size: 16.5px; line-height: 1.3; }
 .card-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+.badge-beta { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; margin-left: 6px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-ink); font: 600 11px/1 var(--font-body); vertical-align: 2px; }
 .count-pill {
   flex: none; height: 24px; min-width: 24px; padding: 0 8px; border-radius: 999px;
   display: inline-grid; place-items: center; background: var(--surface-2); color: var(--ink-2);
   font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
 }
+.card-foot { margin-top: auto; padding-top: 16px; }
+.muted { color: var(--ink-3); }
 
-/* ---------- entry form ---------- */
-.entry { background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--shadow-1); padding: 20px; }
-@media (min-width: 960px) { .entry { position: sticky; top: 24px; padding: 24px; } }
-.form { display: flex; flex-direction: column; gap: 18px; }
-.form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.form-head h2 { font-size: 18px; }
-.sheet-close, .sheet-grip { display: none; }
-
-.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
-.seg input, .cats input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
-.seg label {
-  height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px;
-  font-size: 14px; font-weight: 600; color: var(--ink-3); cursor: pointer; transition: background-color .15s, color .15s, box-shadow .15s;
+.grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.grid > * { min-width: 0; }
+@media (max-width: 719px) {
+  .grid > .c-hero { display: none; }
+  .c-status { order: 1; } .c-cat { order: 2; } .c-mem { order: 3; } .c-hist { order: 4; }
+  .c-goal { order: 5; } .c-scen { order: 6; } .c-cal { order: 7; } .c-tools { order: 8; }
+  .c-safe { order: 9; } .c-ach { order: 10; } .c-info { order: 11; } .c-ai { order: 12; }
 }
-.seg input:checked + label { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
-.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; border: 0; margin: 0; padding: 0; }
-.field > label, .field > legend { font-size: 13px; font-weight: 500; color: var(--ink-2); padding: 0; }
-.field > legend { margin-bottom: 8px; }
-.opt { font-weight: 400; color: var(--ink-3); }
-
-.input {
-  width: 100%; height: 46px; padding: 0 14px; border: 0; border-radius: var(--r-md);
-  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line);
-  font-size: 16px; color: var(--ink); transition: box-shadow .15s, background-color .15s;
+@media (min-width: 720px) {
+  .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; }
+  .c-hero { grid-column: span 12; order: 1; }
+  .c-status { grid-column: span 6; order: 2; } .c-cal { grid-column: span 6; order: 3; }
+  .c-cat { grid-column: span 6; order: 4; } .c-mem { grid-column: span 6; order: 5; }
+  .c-hist { grid-column: span 12; order: 6; }
+  .c-goal { grid-column: span 6; order: 7; } .c-scen { grid-column: span 6; order: 8; }
+  .c-tools { grid-column: span 12; order: 9; }
+  .c-safe { grid-column: span 6; order: 10; } .c-ach { grid-column: span 6; order: 11; }
+  .c-info { grid-column: span 6; order: 12; } .c-ai { grid-column: span 6; order: 13; }
 }
-.input::placeholder { color: var(--ink-3); opacity: 1; }
-.input:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
-.input:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); }
-.input[aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--neg); }
+@media (min-width: 1280px) {
+  .grid > * { order: 0 !important; }
+  .c-hero { grid-column: span 8; } .c-status { grid-column: span 4; }
+  .c-tools { grid-column: span 8; } .c-cal { grid-column: span 4; }
+  .c-cat, .c-mem, .c-goal { grid-column: span 4; }
+  .c-hist { grid-column: span 8; grid-row: span 2; }
+  .c-scen, .c-safe { grid-column: span 4; }
+  .c-ach, .c-info, .c-ai { grid-column: span 4; }
+}
 
-.amount-wrap { position: relative; }
-.amount-wrap .input {
-  height: 60px; padding-right: 48px; font: 600 26px/1 var(--font-display); letter-spacing: -0.02em;
+/* ---------- hero ---------- */
+.grid > .c-hero {
+  position: relative; overflow: hidden; padding: 0; flex-direction: row; align-items: stretch;
+  background: linear-gradient(115deg, var(--hero-a) 0%, var(--hero-b) 55%, var(--hero-a) 100%); box-shadow: none;
 }
-.amount-wrap .cur { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font: 500 22px/1 var(--font-display); color: var(--ink-3); pointer-events: none; }
+.hero-text { position: relative; z-index: 1; flex: 1 1 52%; padding: 32px 0 32px 32px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.hero-text h2 { font-size: clamp(26px, 2.5vw, 34px); line-height: 1.15; letter-spacing: -0.025em; max-width: 17ch; }
+.hero-text p { font-size: 15.5px; color: var(--ink-2); max-width: 36ch; }
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-top: 8px; }
+.hero-art { flex: 1 1 48%; min-width: 0; display: flex; align-items: flex-end; justify-content: flex-end; }
+.hero-art svg { width: 100%; max-width: 460px; height: auto; display: block; }
+@media (max-width: 899px) { .hero-text { padding: 24px 0 24px 24px; } .hero-text h2 { font-size: 26px; } }
 
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip {
-  height: 32px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line);
-  font-size: 13px; font-weight: 500; color: var(--ink-2); transition: background-color .15s, color .15s, box-shadow .15s;
-}
-.chip:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
-.chip.is-on { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 1px transparent; }
+/* ---------- status ---------- */
+.c-status { container: status / inline-size; }
+.status-body { display: grid; gap: 16px; align-items: center; grid-template-columns: minmax(0, 1fr); }
+@container status (min-width: 290px) { .status-body { grid-template-columns: 108px minmax(0, 1fr); gap: 16px; } }
+.ring { position: relative; width: 108px; height: 108px; justify-self: center; }
+.ring svg { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px; }
+.ring-val { font: 700 24px/1 var(--font-display); letter-spacing: -0.02em; }
+.ring-val.is-neg { color: var(--neg); }
+.ring-lbl { font-size: 11px; line-height: 1.25; color: var(--ink-3); margin-top: 4px; }
+#ringArc { transition: stroke-dashoffset .5s cubic-bezier(.2, .8, .2, 1), stroke .2s; }
+.tiles { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tile { display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-areas: "ico lbl" "ico val"; align-items: center; column-gap: 10px; row-gap: 1px; padding: 9px 12px; border-radius: 14px; background: var(--surface-2); }
+.tile > .tile-ico { grid-area: ico; }
+.tile > .tile-label { grid-area: lbl; }
+.tile > .tile-val { grid-area: val; }
+.tile-ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); color: var(--ink-2); }
+.tile-ico.inc { color: var(--accent-ink); }
+.tile-ico.exp { color: var(--neg); }
+.tile-label { font-size: 12.5px; font-weight: 500; color: var(--ink-2); line-height: 1.3; min-width: 0; }
+.tile-label small { font-size: 12px; font-weight: 400; color: var(--ink-3); white-space: nowrap; }
+.tile-label small:not(:empty)::before { content: "· "; }
+.tile-val { font: 600 19px/1.2 var(--font-display); letter-spacing: -0.02em; white-space: nowrap; }
+.tile-val.is-long { font-size: 17px; }
+.tile-bal { background: var(--accent-soft); }
+.tile-bal .tile-label, .tile-bal .tile-val, .tile-bal .tile-ico, .tile-bal .tile-label small { color: var(--accent-ink); }
+.tile-bal.is-neg { background: var(--neg-soft); }
+.tile-bal.is-neg .tile-label, .tile-bal.is-neg .tile-val, .tile-bal.is-neg .tile-ico, .tile-bal.is-neg .tile-label small { color: var(--neg); }
+.hint { margin-top: 14px; display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); font-size: 13px; font-weight: 500; line-height: 1.4; }
+.hint.is-warn { background: var(--warn-soft); color: var(--warn-ink); }
+.hint.is-bad { background: var(--neg-soft); color: var(--neg); }
 
-.cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.cats label {
-  height: 46px; padding: 0 12px; border-radius: var(--r-md); cursor: pointer;
-  display: flex; align-items: center; gap: 10px; min-width: 0;
-  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line);
-  font-size: 14px; font-weight: 500; transition: background-color .15s, box-shadow .15s;
+/* ---------- tools ---------- */
+.tools { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1; align-content: stretch; }
+@media (min-width: 900px) { .tools { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.tool {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 18px 8px 16px; border: 0; border-radius: 16px;
+  background: var(--surface-2); cursor: pointer; text-align: center; font-size: 13px; font-weight: 500; line-height: 1.3; color: var(--ink);
+  transition: background-color .15s, transform .15s, box-shadow .15s;
 }
-.cats label:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
-.cats input:checked + label { background: var(--surface); box-shadow: inset 0 0 0 2px var(--c); }
-.cats input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
-.cat-ico {
-  width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center;
-  background: color-mix(in srgb, var(--c) 16%, var(--surface));
-  color: color-mix(in srgb, var(--c) 78%, var(--ink));
-}
-.err { font-size: 13px; color: var(--neg); }
-.form-hint { font-size: 12.5px; color: var(--ink-3); text-align: center; margin-top: -6px; }
+.tool:hover { background: var(--surface); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.tool-ico { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--accent); box-shadow: var(--shadow-1); }
+.tool:hover .tool-ico { background: var(--accent-soft); }
+.soon { position: absolute; top: 8px; right: 8px; height: 18px; padding: 0 6px; border-radius: 6px; background: var(--warn-soft); color: var(--warn-ink); font-size: 10.5px; font-weight: 600; display: inline-flex; align-items: center; }
+
+/* ---------- reminders ---------- */
+.rem { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rem li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; }
+.rem li + li { border-top: 1px solid var(--line); }
+.rem-ico { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
+.rem-ico.warn { background: var(--warn-soft); color: var(--warn-ink); }
+.rem-title { display: block; font-size: 14px; font-weight: 500; line-height: 1.3; }
+.rem-when { font-size: 12.5px; color: var(--ink-3); }
 
 /* ---------- donut ---------- */
-.card-cat { container: cat / inline-size; }
-.donut-wrap { display: grid; gap: 20px; justify-items: center; }
-@container cat (min-width: 470px) {
-  .donut-wrap { grid-template-columns: 176px minmax(0, 1fr); align-items: center; justify-items: stretch; gap: 28px; }
-}
-.donut { position: relative; width: 176px; height: 176px; }
+.c-cat { container: cat / inline-size; }
+.donut-wrap { display: grid; gap: 16px; justify-items: center; }
+@container cat (min-width: 470px) { .donut-wrap { grid-template-columns: 168px minmax(0, 1fr); align-items: center; justify-items: stretch; gap: 24px; } }
+.donut { position: relative; width: 168px; height: 168px; }
 .donut svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.donut-center {
-  position: absolute; inset: 0; padding: 30px; pointer-events: none;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-}
+.donut-center { position: absolute; inset: 0; padding: 30px; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .dc-label { font-size: 12.5px; font-weight: 500; color: var(--ink-3); max-width: 100%; }
-.dc-value { font: 600 21px/1.15 var(--font-display); letter-spacing: -0.02em; white-space: nowrap; margin: 2px 0; }
-.dc-value.is-long { font-size: 17px; }
+.dc-value { font: 600 20px/1.15 var(--font-display); letter-spacing: -0.02em; white-space: nowrap; margin: 2px 0; }
+.dc-value.is-long { font-size: 16px; }
 .dc-sub { font-size: 12px; color: var(--ink-3); }
 .seg-path { transition: opacity .15s; cursor: pointer; }
 .donut.has-active .seg-path:not(.is-on) { opacity: .25; }
-
 .legend { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 2px; }
 .leg {
-  width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 44px; align-items: center; gap: 10px;
-  padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; text-align: left;
-  font-size: 14px; color: var(--ink); transition: background-color .15s;
+  width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 40px; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; text-align: left; font-size: 14px; color: var(--ink);
+  transition: background-color .15s;
 }
 .leg:hover, .leg.is-on { background: var(--surface-2); }
 .leg .sw { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
-.leg-name { min-width: 0; }
 .leg-val { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .leg-pct { font-size: 13px; color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
 .leg.is-zero { color: var(--ink-3); }
@@ -380,11 +457,7 @@ svg { flex: none; }
 .mems { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
 .mem { display: flex; flex-direction: column; gap: 8px; }
 .mem-top { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-.ava {
-  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line);
-  font: 600 14px/1 var(--font-display); color: var(--ink-2);
-}
+.ava { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font: 600 14px/1 var(--font-display); color: var(--ink-2); }
 .mem-name { font-weight: 500; overflow-wrap: anywhere; }
 .mem-name small { display: block; font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
 .mem-val { font: 600 16px/1.2 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -392,36 +465,117 @@ svg { flex: none; }
 .bar { height: 10px; border-radius: 0 5px 5px 0; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
 .bar > span { display: block; height: 100%; min-width: 4px; border-radius: 0 4px 4px 0; background: var(--accent); transition: width .4s cubic-bezier(.2, .8, .2, 1); }
 .mem-pct { font-size: 12.5px; color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
+.fill { display: flex; flex-direction: column; flex: 1; }
+
+/* ---------- goal ---------- */
+.goal { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; }
+.goal-art { width: 104px; height: 88px; border-radius: 14px; background: linear-gradient(180deg, var(--ill-sky), var(--accent-soft)); display: grid; place-items: end center; overflow: hidden; }
+.goal-art svg { width: 100%; height: auto; display: block; }
+.goal-name { font: 600 15px/1.3 var(--font-display); overflow-wrap: anywhere; }
+.goal-target { font: 700 22px/1.2 var(--font-display); letter-spacing: -0.02em; margin: 2px 0 10px; white-space: nowrap; }
+.prog-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.prog { height: 8px; border-radius: 4px; background: var(--accent-soft-2); overflow: hidden; }
+.prog > span { display: block; height: 100%; border-radius: 4px; background: var(--accent); transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+.prog-pct { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.goal-meta { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; line-height: 1.45; }
+.goal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.goal-stats div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
+.goal-stats span { display: block; font-size: 12px; color: var(--ink-3); }
+.goal-stats b { display: block; font: 600 15px/1.3 var(--font-display); white-space: nowrap; }
+.goal-form { display: flex; flex-direction: column; gap: 10px; }
+.goal-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ---------- scenario ---------- */
+.scen-q { font: 500 15px/1.4 var(--font-display); color: var(--ink); max-width: 30ch; }
+.scen-chips { margin: 12px 0; }
+.scen-body { display: grid; grid-template-columns: minmax(0, 1fr) 108px; gap: 12px; align-items: end; margin-top: auto; }
+.scen-out { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.scen-out strong { color: var(--ink); font-weight: 600; }
+.scen-out .big { display: block; font: 700 20px/1.2 var(--font-display); letter-spacing: -0.02em; margin: 2px 0 4px; white-space: nowrap; }
+.scen-out .big.is-neg { color: var(--neg); }
+.scen-out .big.is-pos { color: var(--pos-ink); }
+.scen-art svg { width: 108px; height: auto; display: block; }
+
+/* ---------- safety ---------- */
+.c-safe { text-align: center; align-items: center; }
+.c-safe .card-head { align-self: stretch; text-align: left; }
+.safe-ico { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 12px; }
+.safe-title { font: 600 16px/1.35 var(--font-display); color: var(--accent-ink); max-width: 24ch; }
+.safe-text { font-size: 13.5px; color: var(--ink-3); margin-top: 6px; max-width: 32ch; }
+.safe-dots { display: flex; gap: 6px; justify-content: center; margin-top: 12px; }
+.safe-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-strong); transition: width .2s; }
+.safe-dots i.on { background: var(--accent); width: 16px; }
+.c-safe .card-foot { align-self: stretch; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ---------- achievements ---------- */
+.badges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; flex: 1; align-content: start; }
+.badge { display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-areas: "ico name" "ico st"; column-gap: 10px; align-items: center; padding: 10px; border-radius: 14px; background: var(--surface-2); font-size: 13px; font-weight: 600; line-height: 1.25; }
+.badge > :first-child { grid-area: ico; }
+.badge > .badge-name { grid-area: name; align-self: end; }
+.badge > .badge-state { grid-area: st; align-self: start; }
+.badge svg.shield { width: 40px; height: 44px; display: block; }
+.badge.is-locked { color: var(--ink-3); }
+.badge-state { font-size: 11.5px; font-weight: 400; color: var(--ink-3); line-height: 1.3; }
+.badge:not(.is-locked) .badge-state { color: var(--accent-ink); }
+
+/* ---------- info ---------- */
+.article { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 14px; align-items: center; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; width: 100%; }
+.article-art { width: 116px; height: 92px; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, var(--accent-soft), var(--ill-sky)); display: grid; place-items: center; }
+.article-art svg { width: 100%; height: 100%; display: block; }
+.article-title { display: block; font: 600 15px/1.35 var(--font-display); }
+.article:hover .article-title { color: var(--accent-ink); }
+.article-date { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+.article-ex { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); margin-top: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.article-more { margin-top: 6px; }
+.dots { display: flex; gap: 6px; margin-top: auto; padding-top: 14px; }
+.dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 4px; background: var(--line-strong); cursor: pointer; transition: width .2s, background-color .2s; }
+.dots button.on { width: 20px; background: var(--accent); }
+
+/* ---------- assistant ---------- */
+.chat { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 2px; }
+.msg { max-width: 92%; padding: 9px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; white-space: pre-line; }
+.msg.bot { align-self: flex-start; background: var(--surface-2); border-top-left-radius: 4px; }
+.msg.me { align-self: flex-end; background: var(--accent); color: var(--on-accent); border-top-right-radius: 4px; }
+.msg.typing { color: var(--ink-3); }
+.sugs { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 10px; }
+.sug { padding: 7px 12px; border: 0; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; color: var(--ink-2); cursor: pointer; text-align: left; }
+.sug:hover { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent-ink); }
+.chat-form { display: flex; gap: 8px; margin-top: auto; padding-top: 12px; }
+.chat-form input { flex: 1 1 auto; min-width: 0; height: 42px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font-size: 15px; }
+.chat-form input:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); }
+.chat-form .btn { width: 42px; height: 42px; padding: 0; }
 
 /* ---------- history ---------- */
-.hgroup + .hgroup { margin-top: 12px; }
-.hgroup-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px;
-  font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
+.hist-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hist-tools:empty { display: none; }
+.hist-search { position: relative; flex: 1 1 200px; display: none; margin-bottom: 8px; }
+.hist-search .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none; display: grid; }
+.hist-search input { width: 100%; height: 40px; padding: 0 12px 0 38px; border: 0; border-radius: 12px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font-size: 15px; }
+.hist-search input:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); }
+@media (max-width: 719px) { .hist-search { display: block; } }
+.filter-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 12px; margin-bottom: 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 13px; font-weight: 500; }
+.filter-pill button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; display: grid; place-items: center; }
+.filter-pill button:hover { background: var(--accent-soft-2); }
+@media (min-width: 1280px) {
+  .hist-scroll { max-height: 540px; overflow-y: auto; margin-right: -12px; padding-right: 8px; padding-bottom: 24px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }
 }
+.hgroup + .hgroup { margin-top: 12px; }
+.hgroup-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
 .ops { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .op {
-  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 36px;
-  grid-template-areas: "ico title amt del" "ico meta meta del";
-  column-gap: 12px; row-gap: 3px; align-items: center;
-  padding: 10px; border-radius: 14px; transition: background-color .15s;
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 36px; grid-template-areas: "ico title amt del" "ico meta meta del";
+  column-gap: 12px; row-gap: 3px; align-items: center; padding: 10px; border-radius: 14px; transition: background-color .15s;
 }
 .op:hover { background: var(--surface-2); }
 .op.is-new { animation: flash 1.8s ease-out; }
 @keyframes flash { 0%, 30% { background: var(--accent-soft); } 100% { background: transparent; } }
-.op-ico {
-  grid-area: ico; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
-  background: color-mix(in srgb, var(--c) 15%, var(--surface));
-  color: color-mix(in srgb, var(--c) 78%, var(--ink));
-}
+.op-ico { grid-area: ico; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 15%, var(--surface)); color: color-mix(in srgb, var(--c) 78%, var(--ink)); }
 .op-ico.is-income { background: var(--accent-soft); color: var(--accent-ink); }
 .op-title { grid-area: title; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; min-width: 0; }
 .op-meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12.5px; color: var(--ink-3); min-width: 0; }
 .op-who { white-space: nowrap; }
-.tag {
-  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 999px;
-  background: color-mix(in srgb, var(--c) 13%, var(--surface)); color: var(--ink-2); font-weight: 500;
-}
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 999px; background: color-mix(in srgb, var(--c) 13%, var(--surface)); color: var(--ink-2); font-weight: 500; }
 .tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .tag.is-income { background: var(--accent-soft); color: var(--accent-ink); }
 .tag.is-income i { background: var(--accent); }
@@ -429,19 +583,80 @@ svg { flex: none; }
 .op-amt.pos { color: var(--pos-ink); }
 .op-del { grid-area: del; width: 36px; height: 36px; color: var(--ink-3); }
 .op-del:hover { background: var(--neg-soft); color: var(--neg); }
-@media (max-width: 599px) {
+@media (max-width: 719px) {
   .op { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "ico title amt" "ico meta del"; column-gap: 10px; padding: 10px 4px; }
   .op-ico { width: 36px; height: 36px; border-radius: 11px; }
   .op-del { width: 32px; height: 32px; justify-self: end; margin-right: -6px; }
-  .card { padding: 18px 16px; }
 }
 .more { margin-top: 8px; }
 
-.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 20px 12px 12px; }
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 16px 12px 8px; margin: auto 0; }
 .empty-ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-3); margin-bottom: 4px; }
 .empty strong { font: 600 15px/1.35 var(--font-display); }
 .empty p { font-size: 13.5px; color: var(--ink-3); max-width: 36ch; }
-.empty .btn { margin-top: 8px; }
+.empty .chips { margin-top: 8px; justify-content: center; }
+
+/* ---------- form fields (entry + tools) ---------- */
+.form { display: flex; flex-direction: column; gap: 18px; }
+.form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.form-head h2 { font-size: 19px; }
+.form-head .icon-btn { margin-right: -8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.seg input, .cats input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.seg label, .seg button { height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; font-weight: 600; color: var(--ink-3); cursor: pointer; transition: background-color .15s, color .15s, box-shadow .15s; }
+.seg input:checked + label, .seg button.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; border: 0; margin: 0; padding: 0; }
+.field > label, .field > legend, .field > .lbl { font-size: 13px; font-weight: 500; color: var(--ink-2); padding: 0; }
+.field > legend { margin-bottom: 8px; }
+.opt { font-weight: 400; color: var(--ink-3); }
+.input { width: 100%; height: 46px; padding: 0 14px; border: 0; border-radius: var(--r-md); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font-size: 16px; color: var(--ink); transition: box-shadow .15s, background-color .15s; }
+.input::placeholder { color: var(--ink-3); opacity: 1; }
+.input:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.input:focus { outline: none; background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); }
+.input[aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--neg); }
+.amount-wrap { position: relative; }
+.amount-wrap .input { height: 60px; padding-right: 48px; font: 600 26px/1 var(--font-display); letter-spacing: -0.02em; }
+.amount-wrap .cur { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font: 500 22px/1 var(--font-display); color: var(--ink-3); pointer-events: none; }
+.suffix-wrap { position: relative; }
+.suffix-wrap .input { padding-right: 44px; }
+.suffix-wrap .cur { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-3); font-weight: 500; pointer-events: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 500; color: var(--ink-2); transition: background-color .15s, color .15s, box-shadow .15s; }
+.chip:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.chip.is-on { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 1px transparent; }
+.cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.cats label { height: 46px; padding: 0 12px; border-radius: var(--r-md); cursor: pointer; display: flex; align-items: center; gap: 10px; min-width: 0; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; font-weight: 500; transition: background-color .15s, box-shadow .15s; }
+.cats label:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.cats input:checked + label { background: var(--surface); box-shadow: inset 0 0 0 2px var(--c); }
+.cats input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cat-ico { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, var(--surface)); color: color-mix(in srgb, var(--c) 78%, var(--ink)); }
+.err { font-size: 13px; color: var(--neg); }
+.form-hint { font-size: 12.5px; color: var(--ink-3); text-align: center; margin-top: -6px; }
+
+/* ---------- entry drawer / sheet ---------- */
+.entry { position: fixed; z-index: 80; background: var(--surface); box-shadow: var(--shadow-3); overflow-y: auto; overscroll-behavior: contain; visibility: hidden; }
+@media (min-width: 720px) {
+  .entry {
+    top: 0; right: 0; bottom: 0; width: min(440px, 100%); border-radius: 24px 0 0 24px;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) max(28px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) 28px;
+    transform: translateX(105%); transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
+  }
+  .sheet-grip { display: none; }
+}
+@media (max-width: 719px) {
+  .entry {
+    left: 0; right: 0; bottom: 0; max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px)); border-radius: 24px 24px 0 0;
+    padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    transform: translateY(105%); transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
+  }
+  .entry .form { max-width: 560px; margin: 0 auto; }
+  .sheet-grip { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 4px auto 0; }
+}
+.entry.open { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
+.scrim { position: fixed; inset: 0; z-index: 65; background: rgba(8, 20, 14, .42); opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s linear .25s; }
+.scrim.open { opacity: 1; visibility: visible; transition: opacity .25s, visibility 0s; }
+.scrim.over-entry { z-index: 75; }
 
 /* ---------- footer ---------- */
 .foot { display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; font-size: 12.5px; color: var(--ink-3); padding-top: 8px; }
@@ -450,208 +665,287 @@ svg { flex: none; }
 
 /* ---------- toast ---------- */
 .toast {
-  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 90;
-  transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
-  display: flex; align-items: center; gap: 8px; max-width: calc(100% - 32px);
-  padding: 12px 16px; border-radius: 14px; background: var(--ink); color: var(--surface);
-  font-size: 14px; font-weight: 500; box-shadow: var(--shadow-3);
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 100;
+  transform: translate(-50%, 12px); opacity: 0; pointer-events: none; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 32px);
+  padding: 12px 16px; border-radius: 14px; background: var(--ink); color: var(--surface); font-size: 14px; font-weight: 500; box-shadow: var(--shadow-3);
   transition: opacity .2s, transform .2s;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-/* ---------- confirm dialog ---------- */
-.dlg {
-  border: 0; padding: 0; width: min(400px, calc(100% - 32px)); border-radius: var(--r-xl);
-  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-3);
-}
+/* ---------- dialogs ---------- */
+.dlg { border: 0; padding: 0; width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 48px); border-radius: var(--r-xl); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-3); }
+.dlg.wide { width: min(560px, calc(100% - 32px)); }
 .dlg::backdrop { background: rgba(8, 20, 14, .45); }
-.dlg form { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
-.dlg h2 { font-size: 19px; }
-.dlg-rec {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; align-items: baseline;
-  padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2);
-}
+.dlg-in { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dlg-head .icon-btn { margin: -8px -10px 0 0; }
+.dlg h2 { font-size: 19px; line-height: 1.3; }
+.dlg-lead { font-size: 14px; color: var(--ink-2); }
+.dlg-rec { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; align-items: baseline; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); }
 .dlg-rec .t { font-weight: 500; overflow-wrap: anywhere; }
 .dlg-rec .a { font: 600 15px/1.3 var(--font-display); white-space: nowrap; }
 .dlg-rec .m { grid-column: 1 / -1; font-size: 13px; color: var(--ink-3); }
 .dlg-note { font-size: 13.5px; color: var(--ink-2); }
-.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-
-/* ---------- phone: form as a bottom sheet ---------- */
-.scrim { display: none; }
-@media (max-width: 959px) {
-  .entry {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px)); overflow-y: auto; overscroll-behavior: contain;
-    border-radius: 24px 24px 0 0; box-shadow: var(--shadow-3);
-    padding-top: 8px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    transform: translateY(105%); visibility: hidden;
-    transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .3s;
-  }
-  .entry.open { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2, .8, .2, 1), visibility 0s; }
-  .entry .form { max-width: 560px; margin: 0 auto; }
-  .sheet-grip { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 4px auto 0; }
-  .sheet-close { display: grid; margin-right: -8px; }
-  .scrim {
-    display: block; position: fixed; inset: 0; z-index: 55; background: rgba(8, 20, 14, .42);
-    opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s linear .25s;
-  }
-  .scrim.open { opacity: 1; visibility: visible; transition: opacity .25s, visibility 0s; }
-}
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.calc-out { display: flex; flex-direction: column; gap: 8px; }
+.calc-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.calc-row b { font: 600 17px/1.2 var(--font-display); white-space: nowrap; }
+.calc-row span { font-size: 14px; font-weight: 500; }
+.calc-row small { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-3); }
+.calc-row.hl { background: var(--accent-soft); }
+.calc-row.hl b, .calc-row.hl span { color: var(--accent-ink); }
+.calc-row.bad { background: var(--neg-soft); }
+.calc-row.bad b, .calc-row.bad span { color: var(--neg); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 479px) { .grid2 { grid-template-columns: 1fr; } }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.checklist li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 14px; line-height: 1.45; }
+.checklist .n { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--neg-soft); color: var(--neg); }
+.prose { display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.6; color: var(--ink-2); max-width: 62ch; }
+.faq { display: flex; flex-direction: column; gap: 8px; }
+.faq details { border-radius: 12px; background: var(--surface-2); padding: 0 14px; }
+.faq summary { cursor: pointer; padding: 12px 0; font-weight: 500; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--ink-3); font-weight: 600; }
+.faq details[open] summary::after { content: "\2212"; }
+.faq details p { padding: 0 0 12px; font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+.list-btns { display: flex; flex-direction: column; gap: 8px; }
+.list-btn { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px; border: 0; border-radius: 14px; background: var(--surface-2); cursor: pointer; text-align: left; color: inherit; }
+.list-btn:hover { background: var(--accent-soft); }
+.list-btn .th { width: 56px; height: 48px; border-radius: 10px; overflow: hidden; background: linear-gradient(160deg, var(--accent-soft), var(--ill-sky)); }
+.list-btn .th svg { width: 100%; height: 100%; display: block; }
+.list-btn b { font: 600 14px/1.35 var(--font-display); display: block; }
+.list-btn small { font-size: 12.5px; color: var(--ink-3); }
+.ach-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.ach-row svg.shield { width: 40px; height: 44px; display: block; }
+.ach-row b { display: block; font-size: 14px; }
+.ach-row small { font-size: 12.5px; color: var(--ink-3); }
+.ach-row .st { font-size: 12px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.ach-row .st.ok { color: var(--accent-ink); }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
 }
 </style>
 </head>
 <body>
-<div class="page" id="page">
+<div class="app" id="app">
 
-  <header class="top" id="top">
-    <div class="brand">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-8"/><path d="M12 12c0-3.9 2.6-6.4 7-6.4 0 4.1-2.8 6.4-7 6.4z"/><path d="M12 14.6c0-2.9-2-4.9-5.4-4.9 0 3.1 2.2 4.9 5.4 4.9z"/></svg>
-      </span>
-      <div>
+  <header class="topbar" id="topbar">
+    <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Мәзірді ашу" aria-controls="sidebar"><span data-icon="menu" data-size="22"></span></button>
+    <a class="brand" href="#top" data-goto="top">
+      <span class="logo" aria-hidden="true"><span data-icon="sprout" data-size="22"></span></span>
+      <span>
         <h1 class="brand-name">Отбасы бюджеті</h1>
-        <p class="brand-sub">Отбасының кірісі мен шығысы бір жерде</p>
-      </div>
-    </div>
+        <span class="brand-sub">Саналы шешім — жарқын болашақ</span>
+      </span>
+    </a>
+    <label class="search">
+      <span data-icon="search" data-size="18"></span>
+      <span class="sr-only">Жазбалардан іздеу</span>
+      <input id="searchTop" type="search" placeholder="Жазбалардан іздеу..." autocomplete="off">
+    </label>
     <div class="top-actions">
-      <button class="btn btn-ghost" id="demoBtn" type="button">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
-        Мысалды көру
-      </button>
-      <button class="icon-btn" id="themeBtn" type="button" aria-label="Түнгі режим" title="Түнгі режим">
-        <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 14.2A7.8 7.8 0 0 1 9.8 4.5a7.8 7.8 0 1 0 9.7 9.7z"/></svg>
-        <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>
+      <button class="btn btn-ghost demo-top" data-action="demo" type="button"><span data-icon="eye" data-size="16"></span>Мысалды көру</button>
+      <div class="bell-wrap">
+        <button class="icon-btn" id="bellBtn" type="button" aria-label="Ескертпелер" aria-expanded="false" aria-controls="bellPop">
+          <span data-icon="bell" data-size="21"></span>
+          <span class="bell-dot" id="bellDot"></span>
+        </button>
+        <div class="pop" id="bellPop" hidden>
+          <h3>Ескертпелер</h3>
+          <ul class="rem" id="bellList" style="padding:0 10px"></ul>
+        </div>
+      </div>
+      <button class="btn btn-primary add-top" data-action="add" type="button"><span data-icon="plus" data-size="18"></span>Жазба қосу</button>
+      <button class="family" id="familyBtn" type="button" aria-label="Параметрлер">
+        <span class="family-ava" aria-hidden="true"><span data-icon="people" data-size="19"></span></span>
+        <span class="family-text"><span class="family-name" id="familyName">Біздің отбасы</span><span class="family-sub" id="familySub">Жеке бюджет</span></span>
       </button>
     </div>
   </header>
 
-  <div class="demo-banner" id="demoBanner" role="status" hidden>
-    <div class="db-text">
-      <span class="db-ico" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
-      </span>
-      <div>
-        <strong>Мысал режимі</strong>
-        <span class="db-sub">Бұл үлгі отбасының бюджеті. Сіздің жазбаларыңыз өзгеріссіз сақтаулы.</span>
+  <div class="shell">
+    <nav class="sidebar" id="sidebar" aria-label="Бөлімдер">
+      <div class="side-head">
+        <strong>Мәзір</strong>
+        <button class="icon-btn" id="closeMenuBtn" type="button" aria-label="Мәзірді жабу"><span data-icon="x" data-size="20"></span></button>
       </div>
-    </div>
-    <button class="btn btn-primary" id="exitDemoBtn" type="button">Өз бюджетіме оралу</button>
-  </div>
-
-  <div class="period" id="period">
-    <h2 id="periodTitle">Қараша 2026</h2>
-    <p>Әр айдың 1-күні есеп жаңадан басталады</p>
-  </div>
-
-  <div class="mbar" id="mbar">
-    <div class="mbar-info">
-      <span class="mbar-label"><span class="pill-demo" id="mbarDemo" hidden>Мысал</span><span id="mbarLabel">Қалдық</span></span>
-      <span class="mbar-value" id="mBalance">0&nbsp;₸</span>
-    </div>
-    <button class="btn btn-primary" id="openSheetBtn" type="button" aria-controls="entry">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-      Жазба қосу
-    </button>
-  </div>
-
-  <section class="kpis" id="kpis" aria-label="Айдың қорытындысы">
-    <article class="kpi">
-      <div class="kpi-label">
-        <span class="kpi-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 19.5h14"/></svg></span>
-        Кіріс
-      </div>
-      <div class="kpi-value" id="kIncome">0&nbsp;₸</div>
-      <div class="kpi-note" id="kIncomeNote"></div>
-    </article>
-    <article class="kpi">
-      <div class="kpi-label">
-        <span class="kpi-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5v-10"/><path d="m7.5 14 4.5-4.5 4.5 4.5"/><path d="M5 4.5h14"/></svg></span>
-        Шығыс
-      </div>
-      <div class="kpi-value" id="kExpense">0&nbsp;₸</div>
-      <div class="kpi-note" id="kExpenseNote"></div>
-    </article>
-    <article class="kpi kpi-balance" id="kBalanceCard">
-      <div class="kpi-label">
-        <span class="kpi-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7.5V5.8A1.8 1.8 0 0 0 16.2 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9.5a2 2 0 0 0-2-2H5"/><path d="M16 13.8h.01"/></svg></span>
-        Қалдық
-      </div>
-      <div class="kpi-value" id="kBalance">0&nbsp;₸</div>
-      <div class="meter" aria-hidden="true"><span id="kMeter"></span></div>
-      <div class="kpi-note" id="kBalanceNote"></div>
-    </article>
-  </section>
-
-  <div class="layout">
-    <aside class="entry" id="entry" aria-label="Жаңа жазба">
-      <form class="form" id="form" novalidate>
-        <div class="sheet-grip" aria-hidden="true"></div>
-        <div class="form-head">
-          <h2>Жаңа жазба</h2>
-          <button class="icon-btn sheet-close" id="closeSheetBtn" type="button" aria-label="Жабу">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-          </button>
+      <ul class="nav">
+        <li><button class="nav-item is-active" type="button" data-goto="top" data-spy="top"><span data-icon="home" data-size="20"></span>Басты бет</button></li>
+        <li><button class="nav-item" type="button" data-goto="histCard" data-spy="histCard"><span data-icon="wallet" data-size="20"></span>Менің қаржым</button></li>
+        <li><button class="nav-item" type="button" data-goto="toolsCard" data-spy="toolsCard"><span data-icon="calc" data-size="20"></span>Қаржы құралдары</button></li>
+        <li><button class="nav-item" type="button" data-goto="safeCard" data-spy="safeCard"><span data-icon="shield" data-size="20"></span>Қауіпсіздік</button></li>
+        <li><button class="nav-item" type="button" data-goto="achCard" data-spy="achCard"><span data-icon="chart" data-size="20"></span>Нәтижелер</button></li>
+        <li><button class="nav-item" type="button" data-goto="infoCard" data-spy="infoCard"><span data-icon="book" data-size="20"></span>Қаржы анықтамалығы</button></li>
+      </ul>
+      <div class="nav-sep"></div>
+      <ul class="nav">
+        <li><button class="nav-item" type="button" data-action="settings"><span data-icon="gear" data-size="20"></span>Параметрлер</button></li>
+        <li><button class="nav-item" type="button" data-action="help"><span data-icon="help" data-size="20"></span>Көмек орталығы</button></li>
+        <li><button class="nav-item" type="button" id="themeSwitch" role="switch" aria-checked="false"><span data-icon="moon" data-size="20"></span>Түнгі режим<span class="switch" aria-hidden="true"></span></button></li>
+      </ul>
+      <div class="promo">
+        <div class="promo-text">
+          <span class="sprout" data-icon="sprout" data-size="26"></span>
+          <strong>Бір қадам алға — қаржылық еркіндікке!</strong>
         </div>
+        <svg class="city" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="152" cy="40" r="16" fill="var(--ill-coin)" opacity=".35"/>
+          <g fill="var(--ill-city-2)">
+            <rect x="6" y="66" width="20" height="70" rx="3"/><rect x="30" y="48" width="18" height="88" rx="3"/>
+            <rect x="138" y="58" width="20" height="78" rx="3"/><rect x="162" y="74" width="30" height="62" rx="3"/>
+          </g>
+          <g fill="var(--ill-city)">
+            <rect x="52" y="78" width="24" height="58" rx="3"/><rect x="118" y="70" width="18" height="66" rx="3"/>
+            <path d="M98 136 L99.2 64 L100.8 64 L102 136 Z"/>
+          </g>
+          <path d="M100 66 L88 47 M100 66 L112 47 M100 66 L94 44 M100 66 L106 44" stroke="var(--ill-city)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <circle cx="100" cy="42" r="8.5" fill="var(--ill-coin)"/>
+          <circle cx="97.5" cy="39.5" r="2.5" fill="#ffffff" opacity=".55"/>
+          <g fill="var(--ill-city-2)">
+            <rect x="56" y="86" width="5" height="5" rx="1"/><rect x="66" y="86" width="5" height="5" rx="1"/><rect x="56" y="98" width="5" height="5" rx="1"/><rect x="66" y="98" width="5" height="5" rx="1"/>
+            <rect x="122" y="80" width="4" height="5" rx="1"/><rect x="129" y="80" width="4" height="5" rx="1"/><rect x="122" y="92" width="4" height="5" rx="1"/><rect x="129" y="92" width="4" height="5" rx="1"/>
+          </g>
+          <path d="M0 128 H200 V150 H0 Z" fill="var(--ill-leaf)"/>
+          <path d="M70 150 C 90 140, 112 138, 132 128" stroke="var(--surface)" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9"/>
+          <g fill="var(--ill-leaf-2)"><circle cx="16" cy="126" r="12"/><circle cx="34" cy="131" r="9"/><circle cx="168" cy="127" r="12"/><circle cx="187" cy="132" r="9"/></g>
+          <g fill="var(--ill-leaf-3)"><circle cx="22" cy="130" r="7"/><circle cx="174" cy="131" r="7"/></g>
+        </svg>
+      </div>
+    </nav>
 
-        <div class="seg" role="radiogroup" aria-label="Жазба түрі">
-          <input type="radio" name="type" id="tExpense" value="expense" checked>
-          <label for="tExpense">Шығыс</label>
-          <input type="radio" name="type" id="tIncome" value="income">
-          <label for="tIncome">Кіріс</label>
-        </div>
-
-        <div class="field">
-          <label for="amount">Сома</label>
-          <div class="amount-wrap">
-            <input class="input" id="amount" name="amount" inputmode="numeric" autocomplete="off" placeholder="0" maxlength="13" aria-describedby="amountErr">
-            <span class="cur" aria-hidden="true">₸</span>
+    <main class="main" id="top">
+      <div class="demo-banner" id="demoBanner" role="status" hidden>
+        <div class="db-text">
+          <span class="db-ico" aria-hidden="true"><span data-icon="eye" data-size="18"></span></span>
+          <div>
+            <strong>Мысал режимі</strong>
+            <span class="db-sub">Бұл үлгі отбасының бюджеті. Сіздің жазбаларыңыз өзгеріссіз сақтаулы.</span>
           </div>
-          <p class="err" id="amountErr" hidden></p>
         </div>
+        <button class="btn btn-primary" id="exitDemoBtn" type="button">Өз бюджетіме оралу</button>
+      </div>
 
-        <div class="field">
-          <label for="member">Отбасы мүшесі</label>
-          <input class="input" id="member" name="member" autocomplete="off" maxlength="24" placeholder="Мысалы, Айгүл" aria-describedby="memberErr">
-          <div class="chips" id="nameChips" aria-label="Бұрын жазылған есімдер"></div>
-          <p class="err" id="memberErr" hidden></p>
+      <div class="mbar" id="mbar">
+        <div class="mbar-info">
+          <span class="mbar-label"><span class="pill-demo" id="mbarDemo" hidden>Мысал</span><span id="mbarLabel">Қалдық</span></span>
+          <span class="mbar-value" id="mBalance">0&nbsp;₸</span>
         </div>
+        <button class="btn btn-primary" id="openSheetBtn" data-action="add" type="button"><span data-icon="plus" data-size="18"></span>Жазба қосу</button>
+      </div>
 
-        <fieldset class="field" id="catField">
-          <legend>Санат</legend>
-          <div class="cats">
-            <input type="radio" name="cat" id="cFood" value="food">
-            <label for="cFood" style="--c: var(--c-food)"><span class="cat-ico" data-icon="food"></span>Азық-түлік</label>
-            <input type="radio" name="cat" id="cTransport" value="transport">
-            <label for="cTransport" style="--c: var(--c-transport)"><span class="cat-ico" data-icon="transport"></span>Көлік</label>
-            <input type="radio" name="cat" id="cHome" value="home">
-            <label for="cHome" style="--c: var(--c-home)"><span class="cat-ico" data-icon="home"></span>Үй</label>
-            <input type="radio" name="cat" id="cOther" value="other">
-            <label for="cOther" style="--c: var(--c-other)"><span class="cat-ico" data-icon="other"></span>Басқа</label>
+      <div class="grid" id="grid">
+
+        <section class="card c-hero" id="hero" aria-labelledby="heroTitle">
+          <div class="hero-text">
+            <h2 id="heroTitle">Отбасының ақшасы — бақылауда!</h2>
+            <p>Кіріс пен шығысты жазыңыз, айдың қалдығын көріңіз, саналы шешім қабылдаңыз.</p>
+            <div class="hero-actions">
+              <button class="btn btn-primary btn-lg" data-action="add" type="button">Жазба қосу<span data-icon="arrow" data-size="18"></span></button>
+              <button class="link" data-action="demo" type="button" id="heroDemo"><span data-icon="eye" data-size="16"></span>Мысалды көру</button>
+            </div>
           </div>
-          <p class="err" id="catErr" hidden></p>
-        </fieldset>
+          <div class="hero-art" aria-hidden="true">
+            <svg viewBox="0 0 440 250">
+              <ellipse cx="270" cy="238" rx="168" ry="9" fill="var(--ill-shadow)"/>
+              <path d="M380 236 C 342 196, 350 128, 402 92 C 428 148, 418 206, 380 236 Z" fill="var(--ill-leaf)"/>
+              <path d="M150 236 C 118 204, 116 150, 140 118 C 172 158, 178 206, 150 236 Z" fill="var(--ill-leaf)"/>
+              <path d="M392 238 C 392 196, 418 160, 440 154 V 222 C 430 232, 412 237, 392 238 Z" fill="var(--ill-leaf-2)"/>
+              <path d="M138 238 C 132 206, 108 182, 82 176 C 86 210, 108 232, 138 238 Z" fill="var(--ill-leaf-2)"/>
+              <path d="M150 236 C 146 206, 140 176, 138 150" stroke="var(--ill-leaf-3)" stroke-width="2" fill="none"/>
+              <path d="M380 236 C 384 196, 390 150, 400 110" stroke="var(--ill-leaf-3)" stroke-width="2" fill="none"/>
+              <g fill="var(--accent)">
+                <rect x="40" y="176" width="20" height="56" rx="5" opacity=".55"/>
+                <rect x="68" y="154" width="20" height="78" rx="5" opacity=".7"/>
+                <rect x="96" y="128" width="20" height="104" rx="5" opacity=".85"/>
+                <rect x="124" y="98" width="20" height="134" rx="5"/>
+              </g>
+              <path d="M36 150 L66 122 L90 132 L134 76" stroke="var(--accent)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M116 74 L136 72 L134 92" stroke="var(--accent)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <g transform="rotate(7 262 140)">
+                <rect x="210" y="40" width="104" height="190" rx="20" fill="var(--ill-dark)"/>
+                <rect x="218" y="50" width="88" height="170" rx="13" fill="var(--surface)"/>
+                <rect x="248" y="56" width="28" height="5" rx="2.5" fill="var(--ill-dark-2)" opacity=".5"/>
+                <rect x="228" y="72" width="44" height="6" rx="3" fill="var(--line-strong)"/>
+                <rect x="228" y="84" width="62" height="12" rx="4" fill="var(--accent-soft-2)"/>
+                <circle cx="262" cy="130" r="22" fill="none" stroke="var(--accent-soft-2)" stroke-width="9"/>
+                <path d="M262 108 A22 22 0 1 1 241.5 138" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round"/>
+                <rect x="228" y="166" width="68" height="7" rx="3.5" fill="var(--line-strong)"/>
+                <rect x="228" y="179" width="46" height="7" rx="3.5" fill="var(--line)"/>
+                <rect x="228" y="194" width="68" height="16" rx="6" fill="var(--accent)"/>
+              </g>
+              <circle cx="336" cy="56" r="30" fill="var(--ill-coin-d)"/>
+              <circle cx="336" cy="52" r="30" fill="var(--ill-coin)"/>
+              <circle cx="336" cy="52" r="22.5" fill="none" stroke="var(--ill-coin-d)" stroke-width="2.5" opacity=".55"/>
+              <text x="336" y="63" text-anchor="middle" font-size="30" font-weight="700" font-family="Onest, Arial, sans-serif" fill="var(--ill-coin-d)">₸</text>
+              <circle cx="324" cy="40" r="4" fill="#ffffff" opacity=".5"/>
+              <ellipse cx="360" cy="190" rx="44" ry="34" fill="var(--ill-pink)"/>
+              <path d="M334 166 L340 146 L354 160 Z" fill="var(--ill-pink-d)"/>
+              <ellipse cx="402" cy="192" rx="10" ry="12" fill="var(--ill-pink-d)"/>
+              <circle cx="399" cy="189" r="1.8" fill="var(--ill-dark)" opacity=".55"/><circle cx="405" cy="189" r="1.8" fill="var(--ill-dark)" opacity=".55"/>
+              <circle cx="380" cy="178" r="3" fill="var(--ill-dark)"/>
+              <rect x="334" y="214" width="12" height="18" rx="4" fill="var(--ill-pink-d)"/>
+              <rect x="368" y="214" width="12" height="18" rx="4" fill="var(--ill-pink-d)"/>
+              <rect x="346" y="157" width="24" height="5" rx="2.5" fill="var(--ill-pink-d)"/>
+              <path d="M316 186 c -8 -2 -10 8 -3 9" stroke="var(--ill-pink-d)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="358" cy="140" r="11" fill="var(--ill-coin)"/>
+              <circle cx="358" cy="140" r="7" fill="none" stroke="var(--ill-coin-d)" stroke-width="1.6" opacity=".6"/>
+            </svg>
+          </div>
+        </section>
 
-        <div class="field">
-          <label for="note">Сипаттама <span class="opt">· міндетті емес</span></label>
-          <input class="input" id="note" name="note" autocomplete="off" maxlength="60" placeholder="Мысалы, апталық азық-түлік">
-        </div>
+        <section class="card c-status" id="statusCard" aria-labelledby="statusTitle">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title" id="statusTitle">Біздің қаржылық жағдайымыз</h2>
+              <p class="card-sub" id="statusSub">Қараша 2026</p>
+            </div>
+            <button class="link" type="button" data-goto="histCard">Толығырақ<span data-icon="arrow" data-size="14"></span></button>
+          </div>
+          <div class="status-body">
+            <div class="ring">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent-soft-2)" stroke-width="11"/>
+                <circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+              </svg>
+              <div class="ring-center">
+                <span class="ring-val" id="ringVal">—</span>
+                <span class="ring-lbl">кірістен қалды</span>
+              </div>
+            </div>
+            <div class="tiles">
+              <div class="tile">
+                <span class="tile-ico inc" data-icon="income" data-size="18"></span>
+                <span class="tile-label">Кіріс <small id="kIncomeNote"></small></span>
+                <span class="tile-val" id="kIncome">0&nbsp;₸</span>
+              </div>
+              <div class="tile">
+                <span class="tile-ico exp" data-icon="expense" data-size="18"></span>
+                <span class="tile-label">Шығыс <small id="kExpenseNote"></small></span>
+                <span class="tile-val" id="kExpense">0&nbsp;₸</span>
+              </div>
+              <div class="tile tile-bal" id="kBalanceCard">
+                <span class="tile-ico" data-icon="wallet" data-size="18"></span>
+                <span class="tile-label">Қалдық <small id="kBalanceNote"></small></span>
+                <span class="tile-val" id="kBalance">0&nbsp;₸</span>
+              </div>
+            </div>
+          </div>
+          <div class="hint" id="statusHint"><span data-icon="bulb" data-size="18"></span><span id="statusHintText"></span></div>
+        </section>
 
-        <button class="btn btn-primary btn-lg btn-block" id="submitBtn" type="submit">Шығысты қосу</button>
-        <p class="form-hint">Күні мен уақыты автоматты түрде қойылады</p>
-      </form>
-    </aside>
-    <div class="scrim" id="scrim"></div>
+        <section class="card c-tools" id="toolsCard" aria-labelledby="toolsTitle">
+          <div class="card-head"><h2 class="card-title" id="toolsTitle">Жылдам құралдар</h2></div>
+          <div class="tools" id="tools"></div>
+        </section>
 
-    <div class="content" id="content">
-      <div class="charts">
-        <section class="card card-cat" aria-labelledby="catTitle">
+        <section class="card c-cal" id="calCard" aria-labelledby="calTitle">
+          <div class="card-head"><h2 class="card-title" id="calTitle">Күнтізбе және ескертпелер</h2></div>
+          <ul class="rem" id="reminders"></ul>
+        </section>
+
+        <section class="card c-cat" id="catCard" aria-labelledby="catTitle">
           <div class="card-head">
             <div>
               <h2 class="card-title" id="catTitle">Ақша қайда кетті?</h2>
@@ -673,41 +967,174 @@ svg { flex: none; }
             </div>
             <ul class="legend" id="legend"></ul>
           </div>
+          <div class="card-foot"><button class="btn btn-soft btn-block" type="button" data-goto="histCard">Толығырақ көру<span data-icon="arrow" data-size="16"></span></button></div>
         </section>
 
-        <section class="card" aria-labelledby="memTitle">
+        <section class="card c-mem" id="memCard" aria-labelledby="memTitle">
           <div class="card-head">
             <div>
               <h2 class="card-title" id="memTitle">Кім қанша жұмсады?</h2>
               <p class="card-sub" id="memSub">Әр адамның шығысы</p>
             </div>
           </div>
-          <div id="members"></div>
+          <div id="members" class="fill"></div>
+        </section>
+
+        <section class="card c-goal" id="goalCard" aria-labelledby="goalTitle">
+          <div class="card-head"><h2 class="card-title" id="goalTitle">Қаржылық мақсат</h2></div>
+          <div id="goalBox" class="fill"></div>
+        </section>
+
+        <section class="card c-hist" id="histCard" aria-labelledby="histTitle">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title" id="histTitle">Операциялар тарихы</h2>
+              <p class="card-sub">Жаңа жазбалар жоғарыда</p>
+            </div>
+            <span class="count-pill" id="histCount" aria-label="Жазбалар саны">0</span>
+          </div>
+          <div class="hist-tools">
+            <label class="hist-search">
+              <span class="ico" data-icon="search" data-size="16"></span>
+              <input id="searchHist" type="search" placeholder="Жазбалардан іздеу..." autocomplete="off" aria-label="Жазбалардан іздеу">
+            </label>
+            <span class="filter-pill" id="filterPill" hidden><span id="filterText"></span><button type="button" id="clearSearch" aria-label="Іздеуді тазалау"><span data-icon="x" data-size="14"></span></button></span>
+          </div>
+          <div class="hist-scroll"><div id="history"></div></div>
+          <button class="btn btn-ghost btn-block more" id="moreBtn" type="button" hidden>Тағы көрсету</button>
+        </section>
+
+        <section class="card c-scen" id="scenCard" aria-labelledby="scenTitle">
+          <div class="card-head"><h2 class="card-title" id="scenTitle">Сценарийді тексеру</h2></div>
+          <p class="scen-q">Егер табыс азайса, бюджет төтеп бере ме?</p>
+          <div class="scen-chips chips" id="scenChips" role="group" aria-label="Табыс қанша азаяды"></div>
+          <div class="scen-body">
+            <div class="scen-out" id="scenOut" aria-live="polite"></div>
+            <div class="scen-art" aria-hidden="true">
+              <svg viewBox="0 0 120 104">
+                <ellipse cx="60" cy="98" rx="52" ry="5" fill="var(--ill-shadow)"/>
+                <path d="M6 96 C 2 70, 12 50, 30 44 C 34 66, 26 86, 6 96 Z" fill="var(--ill-leaf)"/>
+                <rect x="26" y="10" width="58" height="86" rx="10" fill="var(--ill-dark-2)"/>
+                <rect x="33" y="18" width="44" height="17" rx="4" fill="var(--accent-soft)"/>
+                <rect x="58" y="23" width="14" height="7" rx="2" fill="var(--accent)"/>
+                <g fill="var(--surface)" opacity=".9">
+                  <rect x="33" y="42" width="11" height="9" rx="2.5"/><rect x="49" y="42" width="11" height="9" rx="2.5"/><rect x="65" y="42" width="11" height="9" rx="2.5"/>
+                  <rect x="33" y="56" width="11" height="9" rx="2.5"/><rect x="49" y="56" width="11" height="9" rx="2.5"/><rect x="65" y="56" width="11" height="9" rx="2.5"/>
+                  <rect x="33" y="70" width="11" height="9" rx="2.5"/><rect x="49" y="70" width="11" height="9" rx="2.5"/>
+                </g>
+                <rect x="65" y="70" width="11" height="19" rx="2.5" fill="var(--accent)"/>
+                <ellipse cx="98" cy="92" rx="16" ry="5" fill="var(--ill-coin-d)"/><rect x="82" y="84" width="32" height="8" fill="var(--ill-coin-d)"/><ellipse cx="98" cy="84" rx="16" ry="5" fill="var(--ill-coin)"/>
+                <rect x="82" y="76" width="32" height="8" fill="var(--ill-coin-d)"/><ellipse cx="98" cy="76" rx="16" ry="5" fill="var(--ill-coin)"/>
+                <rect x="82" y="68" width="32" height="8" fill="var(--ill-coin-d)"/><ellipse cx="98" cy="68" rx="16" ry="5" fill="var(--ill-coin)"/>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="card c-safe" id="safeCard" aria-labelledby="safeHead">
+          <div class="card-head"><h2 class="card-title" id="safeHead">Қауіпсіздік кеңесі</h2></div>
+          <span class="safe-ico" data-icon="shield" data-size="28"></span>
+          <p class="safe-title" id="safeTitle"></p>
+          <p class="safe-text" id="safeText"></p>
+          <div class="safe-dots" id="safeDots" aria-hidden="true"></div>
+          <div class="card-foot">
+            <button class="btn btn-ghost" type="button" id="nextTip">Келесі кеңес</button>
+            <button class="btn btn-soft" type="button" data-tool="fraud">Толығырақ</button>
+          </div>
+        </section>
+
+        <section class="card c-ach" id="achCard" aria-labelledby="achTitle">
+          <div class="card-head">
+            <h2 class="card-title" id="achTitle">Жетістіктерім</h2>
+            <button class="link" type="button" id="allAch">Барлығы<span data-icon="arrow" data-size="14"></span></button>
+          </div>
+          <div class="badges" id="badges"></div>
+        </section>
+
+        <section class="card c-info" id="infoCard" aria-labelledby="infoTitle">
+          <div class="card-head">
+            <h2 class="card-title" id="infoTitle">Пайдалы ақпарат</h2>
+            <button class="link" type="button" id="allArticles">Барлық мақалалар<span data-icon="arrow" data-size="14"></span></button>
+          </div>
+          <div id="articleSlot"></div>
+          <div class="dots" id="articleDots" aria-label="Мақалалар"></div>
+        </section>
+
+        <section class="card c-ai" id="aiCard" aria-labelledby="aiTitle">
+          <div class="card-head">
+            <h2 class="card-title" id="aiTitle">Қаржы көмекшісі<span class="badge-beta">Бета</span></h2>
+          </div>
+          <div class="chat" id="chat" aria-live="polite"></div>
+          <div class="sugs" id="sugs"></div>
+          <form class="chat-form" id="chatForm" autocomplete="off">
+            <input id="chatInput" type="text" maxlength="200" placeholder="Хабарлама жазыңыз..." aria-label="Көмекшіге хабарлама">
+            <button class="btn btn-primary" type="submit" aria-label="Жіберу"><span data-icon="send" data-size="18"></span></button>
+          </form>
         </section>
       </div>
 
-      <section class="card" aria-labelledby="histTitle">
-        <div class="card-head">
-          <div>
-            <h2 class="card-title" id="histTitle">Операциялар тарихы</h2>
-            <p class="card-sub">Жаңа жазбалар жоғарыда</p>
-          </div>
-          <span class="count-pill" id="histCount" aria-label="Жазбалар саны">0</span>
-        </div>
-        <div id="history"></div>
-        <button class="btn btn-ghost btn-block more" id="moreBtn" type="button" hidden>Тағы көрсету</button>
-      </section>
-    </div>
+      <footer class="foot">
+        <p>Деректер тек осы құрылғының браузерінде сақталады: басқа телефоннан не компьютерден ашсаңыз, жазбалар көрінбейді.</p>
+        <p class="warn" id="storageWarn" hidden>Браузер деректерді сақтауға рұқсат бермеді, сондықтан жазбалар бетті жапқанда өшеді. Жасырын (инкогнито) режимнен шығып, қайта ашып көріңіз.</p>
+      </footer>
+    </main>
   </div>
-
-  <footer class="foot">
-    <p>Деректер тек осы құрылғының браузерінде сақталады: басқа телефоннан не компьютерден ашсаңыз, жазбалар көрінбейді.</p>
-    <p class="warn" id="storageWarn" hidden>Браузер деректерді сақтауға рұқсат бермеді, сондықтан жазбалар бетті жапқанда өшеді. Жасырын (инкогнито) режимнен шығып, қайта ашып көріңіз.</p>
-  </footer>
 </div>
 
+<div class="scrim" id="scrim"></div>
+
+<aside class="entry" id="entry" aria-label="Жаңа жазба">
+  <form class="form" id="form" novalidate>
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <div class="form-head">
+      <h2>Жаңа жазба</h2>
+      <button class="icon-btn" id="closeSheetBtn" type="button" aria-label="Жабу"><span data-icon="x" data-size="20"></span></button>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Жазба түрі">
+      <input type="radio" name="type" id="tExpense" value="expense" checked>
+      <label for="tExpense">Шығыс</label>
+      <input type="radio" name="type" id="tIncome" value="income">
+      <label for="tIncome">Кіріс</label>
+    </div>
+    <div class="field">
+      <label for="amount">Сома</label>
+      <div class="amount-wrap">
+        <input class="input" id="amount" name="amount" inputmode="numeric" autocomplete="off" placeholder="0" maxlength="13" aria-describedby="amountErr">
+        <span class="cur" aria-hidden="true">₸</span>
+      </div>
+      <p class="err" id="amountErr" hidden></p>
+    </div>
+    <div class="field">
+      <label for="member">Отбасы мүшесі</label>
+      <input class="input" id="member" name="member" autocomplete="off" maxlength="24" placeholder="Мысалы, Айгүл" aria-describedby="memberErr">
+      <div class="chips" id="nameChips" aria-label="Бұрын жазылған есімдер"></div>
+      <p class="err" id="memberErr" hidden></p>
+    </div>
+    <fieldset class="field" id="catField">
+      <legend>Санат</legend>
+      <div class="cats">
+        <input type="radio" name="cat" id="cFood" value="food">
+        <label for="cFood" style="--c: var(--c-food)"><span class="cat-ico" data-icon="food" data-size="18"></span>Азық-түлік</label>
+        <input type="radio" name="cat" id="cTransport" value="transport">
+        <label for="cTransport" style="--c: var(--c-transport)"><span class="cat-ico" data-icon="transport" data-size="18"></span>Көлік</label>
+        <input type="radio" name="cat" id="cHome" value="home">
+        <label for="cHome" style="--c: var(--c-home)"><span class="cat-ico" data-icon="home" data-size="18"></span>Үй</label>
+        <input type="radio" name="cat" id="cOther" value="other">
+        <label for="cOther" style="--c: var(--c-other)"><span class="cat-ico" data-icon="other" data-size="18"></span>Басқа</label>
+      </div>
+      <p class="err" id="catErr" hidden></p>
+    </fieldset>
+    <div class="field">
+      <label for="note">Сипаттама <span class="opt">· міндетті емес</span></label>
+      <input class="input" id="note" name="note" autocomplete="off" maxlength="60" placeholder="Мысалы, апталық азық-түлік">
+    </div>
+    <button class="btn btn-primary btn-lg btn-block" id="submitBtn" type="submit">Шығысты қосу</button>
+    <p class="form-hint">Күні мен уақыты автоматты түрде қойылады</p>
+  </form>
+</aside>
+
 <dialog class="dlg" id="delDlg" aria-labelledby="delTitle">
-  <form method="dialog">
+  <form method="dialog" class="dlg-in">
     <h2 id="delTitle">Жазбаны жою керек пе?</h2>
     <div class="dlg-rec" id="delRec"></div>
     <p class="dlg-note">Жойылған жазбаны қайтару мүмкін емес. Сомалар бірден қайта есептеледі.</p>
@@ -716,6 +1143,16 @@ svg { flex: none; }
       <button class="btn btn-danger" value="ok" type="submit" id="delOk">Жою</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="dlg wide" id="panelDlg" aria-labelledby="panelTitle">
+  <div class="dlg-in">
+    <div class="dlg-head">
+      <div><h2 id="panelTitle"></h2><p class="card-sub" id="panelSub"></p></div>
+      <button class="icon-btn" type="button" id="panelClose" aria-label="Жабу"><span data-icon="x" data-size="20"></span></button>
+    </div>
+    <div id="panelBody" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
 </dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -728,8 +1165,10 @@ svg { flex: none; }
   /* ---------- constants ---------- */
   var KEY = 'otbasy-budget:v1:records';
   var THEME_KEY = 'otbasy-budget:v1:theme';
+  var GOAL_KEY = 'otbasy-budget:v1:goal';
+  var FLAGS_KEY = 'otbasy-budget:v1:flags';
   var MAX_AMOUNT = 100000000;
-  var HIST_PAGE = 30;
+  var HIST_PAGE = window.matchMedia('(max-width: 719px)').matches ? 8 : 30;
   var NB = ' ';
   var MONTHS = ['Қаңтар', 'Ақпан', 'Наурыз', 'Сәуір', 'Мамыр', 'Маусым', 'Шілде', 'Тамыз', 'Қыркүйек', 'Қазан', 'Қараша', 'Желтоқсан'];
   var CAT_ORDER = ['food', 'transport', 'home', 'other'];
@@ -739,21 +1178,46 @@ svg { flex: none; }
     home: { name: 'Үй', color: 'var(--c-home)' },
     other: { name: 'Басқа', color: 'var(--c-other)' }
   };
-  function icon(paths, size) {
-    size = size || 20;
-    return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
-  }
-  var ICON_PATHS = {
+  var P = {
     food: '<path d="M5.5 8.5h13l-1 10.6a2 2 0 0 1-2 1.9h-7a2 2 0 0 1-2-1.9l-1-10.6z"/><path d="M9 10.5V7.5a3 3 0 0 1 6 0v3"/>',
     transport: '<path d="M5 16.5v-4l1.7-4.2A2 2 0 0 1 8.6 7h6.8a2 2 0 0 1 1.9 1.3l1.7 4.2v4z"/><path d="M5 12.5h14"/><path d="M7 16.5V19M17 16.5V19"/><path d="M8.5 14.5h.01M15.5 14.5h.01"/>',
     home: '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9.5h11V10"/><path d="M10 19.5v-5h4v5"/>',
     other: '<path d="M6.5 12h.01M12 12h.01M17.5 12h.01" stroke-width="3"/>',
     income: '<path d="M12 4v10"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 19.5h14"/>',
+    expense: '<path d="M12 19.5v-10"/><path d="m7.5 14 4.5-4.5 4.5 4.5"/><path d="M5 4.5h14"/>',
     trash: '<path d="M4.5 7h15"/><path d="M10 11v6M14 11v6"/><path d="M6.5 7l.8 11.2A2 2 0 0 0 9.3 20h5.4a2 2 0 0 0 2-1.8L17.5 7"/><path d="M9.5 7V5.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7"/>',
     people: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15.5 5.8a3 3 0 0 1 0 5.4M17.5 14a5.5 5.5 0 0 1 3 5"/>',
     list: '<path d="M8 6.5h12M8 12h12M8 17.5h12"/><path d="M4 6.5h.01M4 12h.01M4 17.5h.01" stroke-width="2.6"/>',
-    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>'
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    wallet: '<path d="M18.5 7.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12.5a1 1 0 0 0 1-1v-3"/><path d="M20 8.5h-5a3.5 3.5 0 0 0 0 7h5a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1z"/><path d="M15.5 12h.01" stroke-width="2.6"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12h.01" stroke-width="3"/>',
+    cart: '<path d="M3.5 4.5h2l2.2 10.2a1.6 1.6 0 0 0 1.6 1.3h7.6a1.6 1.6 0 0 0 1.6-1.2l1.5-6.3H6.4"/><circle cx="10" cy="19.5" r="1.2"/><circle cx="17" cy="19.5" r="1.2"/>',
+    percent: '<path d="M18.5 5.5l-13 13"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/>',
+    shield: '<path d="M12 3.5 19 6v5.5c0 4.4-3 7.9-7 9-4-1.1-7-4.6-7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+    calc: '<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7h7"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18h.01M12 18h.01" stroke-width="2.4"/>',
+    bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    calendar: '<rect x="4" y="5" width="16" height="15.5" rx="2.5"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/><path d="M8.5 13.5h.01M12 13.5h.01M15.5 13.5h.01M8.5 17h.01M12 17h.01" stroke-width="2.4"/>',
+    card: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/>',
+    bulb: '<path d="M9 18h6M10 21h4"/><path d="M8.5 14.5A6 6 0 1 1 15.5 14.5c-.8.7-1.2 1.4-1.3 2.5h-4.4c-.1-1.1-.5-1.8-1.3-2.5z"/>',
+    book: '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2.3-2.4 3.8"/><path d="M12 17h.01" stroke-width="2.6"/>',
+    chart: '<path d="M4 4v16h16"/><path d="m7.5 14.5 3.5-4 3 2.5 5-6"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    send: '<path d="M5 12h13"/><path d="m13 6 6 6-6 6"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    moon: '<path d="M19.5 14.2A7.8 7.8 0 0 1 9.8 4.5a7.8 7.8 0 1 0 9.7 9.7z"/>',
+    sprout: '<path d="M12 20v-8"/><path d="M12 12c0-3.9 2.6-6.4 7-6.4 0 4.1-2.8 6.4-7 6.4z"/><path d="M12 14.6c0-2.9-2-4.9-5.4-4.9 0 3.1 2.2 4.9 5.4 4.9z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>'
   };
+  function icon(name, size) {
+    size = size || 20;
+    return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || '') + '</svg>';
+  }
 
   /* ---------- helpers ---------- */
   var $ = function (id) { return document.getElementById(id); };
@@ -765,7 +1229,7 @@ svg { flex: none; }
         if (v == null || v === false) return;
         if (k === 'class') el.className = v;
         else if (k === 'style') el.style.cssText = v;
-        else if (k === 'html') el.innerHTML = v; /* static icons only */
+        else if (k === 'html') el.innerHTML = v; /* static markup only */
         else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
         else el.setAttribute(k, v === true ? '' : v);
       });
@@ -781,10 +1245,7 @@ svg { flex: none; }
     return el;
   }
   function fmtNum(n) { return String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g, NB); }
-  function money(n, signed) {
-    var sign = n < 0 ? '−' : (signed && n > 0 ? '+' : '');
-    return sign + fmtNum(n) + NB + '₸';
-  }
+  function money(n) { return (n < 0 ? '−' : '') + fmtNum(n) + NB + '₸'; }
   function pct(part, whole) {
     if (!whole) return 0;
     var p = part / whole * 100;
@@ -796,21 +1257,33 @@ svg { flex: none; }
   function upperFirst(s) { var f = s.charAt(0); try { f = f.toLocaleUpperCase('kk'); } catch (e) { f = f.toUpperCase(); } return f + s.slice(1); }
   function monthKey(d) { return d.getFullYear() * 12 + d.getMonth(); }
   function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  function dayLabel(d) { return d.getDate() + ' ' + lower(MONTHS[d.getMonth()]); }
   function whenLabel(d) {
-    var now = new Date();
-    var t = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var now = new Date(), t = pad(d.getHours()) + ':' + pad(d.getMinutes());
     if (sameDay(d, now)) return 'Бүгін, ' + t;
     var y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
     if (sameDay(d, y)) return 'Кеше, ' + t;
-    var s = d.getDate() + ' ' + lower(MONTHS[d.getMonth()]);
+    var s = dayLabel(d);
     if (d.getFullYear() !== now.getFullYear()) s += ' ' + d.getFullYear();
     return s + ', ' + t;
   }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function setLong(el, text, limit) { el.textContent = text; el.classList.toggle('is-long', text.length > limit); }
+  function digits(v) { return parseInt(String(v).replace(/\D/g, ''), 10) || 0; }
+  function fillIcons() {
+    [].forEach.call(document.querySelectorAll('[data-icon]'), function (el) {
+      el.innerHTML = icon(el.dataset.icon, +el.dataset.size || 18);
+      if (!el.className) el.style.display = 'inline-grid';
+    });
+  }
 
   /* ---------- storage ---------- */
   var storageOk = true;
+  function readJSON(key, fallback) { try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; } }
+  function writeJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); storageOk = true; } catch (e) { storageOk = false; }
+    $('storageWarn').hidden = storageOk;
+  }
   function isValid(r) {
     return r && typeof r === 'object' && typeof r.id === 'string' &&
       (r.type === 'income' || r.type === 'expense') &&
@@ -819,29 +1292,15 @@ svg { flex: none; }
       typeof r.createdAt === 'string' && !isNaN(Date.parse(r.createdAt)) &&
       (r.type === 'income' || Object.prototype.hasOwnProperty.call(CATS, r.category));
   }
-  function readStore() {
-    try {
-      var raw = localStorage.getItem(KEY);
-      if (!raw) return [];
-      var arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr.filter(isValid) : [];
-    } catch (e) { return []; }
-  }
-  function writeStore(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); storageOk = true; }
-    catch (e) { storageOk = false; }
-    $('storageWarn').hidden = storageOk;
-  }
-  (function probe() {
-    try { localStorage.setItem(KEY + ':probe', '1'); localStorage.removeItem(KEY + ':probe'); }
-    catch (e) { storageOk = false; }
-  })();
+  function readStore() { var arr = readJSON(KEY, []); return Array.isArray(arr) ? arr.filter(isValid) : []; }
+  function readGoal() { var g = readJSON(GOAL_KEY, null); return g && typeof g.name === 'string' && g.target > 0 ? g : null; }
+  function readFlags() { var f = readJSON(FLAGS_KEY, {}); return f && typeof f === 'object' ? f : {}; }
+  (function probe() { try { localStorage.setItem(KEY + ':probe', '1'); localStorage.removeItem(KEY + ':probe'); } catch (e) { storageOk = false; } })();
 
-  /* ---------- demo data (kept apart from personal records, rebuilt on every visit) ---------- */
+  /* ---------- demo data (kept apart from personal data, rebuilt on every visit) ---------- */
   function buildDemo() {
     var now = new Date(), y = now.getFullYear(), m = now.getMonth(), today = now.getDate();
     var monthStart = new Date(y, m, 1).getTime();
-    /* [share of month passed, hh, mm, type, member, amount, category, note] */
     var cur = [
       [0.00, 9, 40, 'expense', 'Ерлан', 180000, 'home', 'Пәтерақы'],
       [0.03, 10, 15, 'income', 'Ерлан', 450000, null, 'Жалақы'],
@@ -868,20 +1327,14 @@ svg { flex: none; }
       [0.55, 18, 0, 'expense', 'Ерлан', 20000, 'transport', 'Жанармай, АИ-92'],
       [0.80, 14, 30, 'expense', 'Мәдина', 32000, 'other', 'Күзгі киім']
     ];
-    var out = [];
-    var prevDays = new Date(y, m, 0).getDate();
-    prev.forEach(function (r, i) {
-      var d = new Date(y, m - 1, 1 + Math.round(r[0] * (prevDays - 1)), r[1], r[2]);
-      out.push(mk('demo-p' + i, r, d));
-    });
+    var out = [], prevDays = new Date(y, m, 0).getDate();
+    function mk(id, r, d) { return { id: id, type: r[3], member: r[4], amount: r[5], category: r[6], note: r[7], createdAt: d.toISOString() }; }
+    prev.forEach(function (r, i) { out.push(mk('demo-p' + i, r, new Date(y, m - 1, 1 + Math.round(r[0] * (prevDays - 1)), r[1], r[2]))); });
     cur.forEach(function (r, i) {
       var d = new Date(y, m, 1 + Math.round(r[0] * (today - 1)), r[1], r[2]);
       if (d > now) d = new Date(Math.max(monthStart + (i + 1) * 60000, now.getTime() - (cur.length - i) * 17 * 60000));
       out.push(mk('demo-c' + i, r, d));
     });
-    function mk(id, r, d) {
-      return { id: id, type: r[3], member: r[4], amount: r[5], category: r[6], note: r[7], createdAt: d.toISOString() };
-    }
     return out;
   }
 
@@ -890,37 +1343,49 @@ svg { flex: none; }
     mode: 'personal',
     personal: readStore(),
     demo: [],
+    goal: readGoal(),
+    demoGoal: null,
+    flags: readFlags(),
+    demoFlags: {},
+    query: '',
     activeCat: null,
     histLimit: HIST_PAGE,
     flashId: null,
-    pendingDelete: null
+    pendingDelete: null,
+    scenPct: 20,
+    tipIdx: 0,
+    articleIdx: 0,
+    editingGoal: false
   };
-  function records() { return state.mode === 'demo' ? state.demo : state.personal; }
-  function commit() { if (state.mode === 'personal') writeStore(state.personal); render(); }
+  function isDemo() { return state.mode === 'demo'; }
+  function records() { return isDemo() ? state.demo : state.personal; }
+  function goal() { return isDemo() ? state.demoGoal : state.goal; }
+  function flags() { return isDemo() ? state.demoFlags : state.flags; }
+  function setFlag(k) {
+    if (isDemo()) state.demoFlags[k] = true;
+    else if (!state.flags[k]) { state.flags[k] = true; writeJSON(FLAGS_KEY, state.flags); }
+    renderAchievements(summarize());
+  }
+  function commit() { if (!isDemo()) writeJSON(KEY, state.personal); render(); }
 
   function knownNames() {
-    var counts = {};
-    var display = {};
-    records().forEach(function (r) {
-      var k = lower(r.member);
-      counts[k] = (counts[k] || 0) + 1;
-      if (!display[k]) display[k] = r.member;
-    });
+    var counts = {}, display = {};
+    records().forEach(function (r) { var k = lower(r.member); counts[k] = (counts[k] || 0) + 1; if (!display[k]) display[k] = r.member; });
     return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b, 'kk'); }).map(function (k) { return display[k]; });
   }
   function normalizeName(raw) {
     var s = raw.trim().replace(/\s+/g, ' ');
     if (!s) return '';
-    var k = lower(s);
-    var hit = knownNames().filter(function (n) { return lower(n) === k; })[0];
+    var k = lower(s), hit = knownNames().filter(function (n) { return lower(n) === k; })[0];
     return hit || upperFirst(s);
   }
 
   function summarize() {
     var key = monthKey(new Date());
-    var s = { inc: 0, exp: 0, incN: 0, expN: 0, byCat: { food: 0, transport: 0, home: 0, other: 0 }, members: [] };
+    var s = { inc: 0, exp: 0, incN: 0, expN: 0, byCat: { food: 0, transport: 0, home: 0, other: 0 }, members: [], allBal: 0 };
     var mem = {};
     records().forEach(function (r) {
+      s.allBal += r.type === 'income' ? r.amount : -r.amount;
       if (monthKey(new Date(r.createdAt)) !== key) return;
       if (r.type === 'income') { s.inc += r.amount; s.incN++; return; }
       s.exp += r.amount; s.expN++;
@@ -930,63 +1395,68 @@ svg { flex: none; }
       mem[k].sum += r.amount; mem[k].n++;
     });
     s.bal = s.inc - s.exp;
-    s.members = Object.keys(mem).map(function (k) { return mem[k]; })
-      .sort(function (a, b) { return b.sum - a.sum || a.name.localeCompare(b.name, 'kk'); });
+    s.share = s.inc > 0 ? s.bal / s.inc : null;
+    s.members = Object.keys(mem).map(function (k) { return mem[k]; }).sort(function (a, b) { return b.sum - a.sum || a.name.localeCompare(b.name, 'kk'); });
+    s.topCat = CAT_ORDER.slice().sort(function (a, b) { return s.byCat[b] - s.byCat[a]; })[0];
     return s;
   }
 
   /* ---------- render ---------- */
+  var lastSummary = null;
   function render() {
-    var now = new Date();
-    var monthName = MONTHS[now.getMonth()];
-    var s = summarize();
-
-    $('periodTitle').textContent = monthName + ' ' + now.getFullYear();
+    var now = new Date(), monthName = MONTHS[now.getMonth()], s = summarize();
+    lastSummary = s;
+    $('statusSub').textContent = monthName + ' ' + now.getFullYear();
     $('catSub').textContent = monthName + ' · санаттар бойынша шығыс';
     $('memSub').textContent = monthName + ' · әр адамның шығысы';
-    $('mbarLabel').textContent = state.mode === 'demo' ? 'Қалдық' : 'Қалдық · ' + monthName;
-
-    renderKpis(s);
+    $('mbarLabel').textContent = isDemo() ? 'Қалдық' : 'Қалдық · ' + monthName;
+    renderStatus(s);
     renderDonut(s);
     renderMembers(s);
     renderHistory();
     renderNameChips();
-
-    var demo = state.mode === 'demo';
+    renderGoal(s);
+    renderScenario(s);
+    renderAchievements(s);
+    renderReminders();
+    var demo = isDemo();
     $('demoBanner').hidden = !demo;
-    $('demoBtn').hidden = demo;
+    [].forEach.call(document.querySelectorAll('[data-action="demo"]'), function (b) { b.hidden = demo; });
     $('mbarDemo').hidden = !demo;
-    document.body.classList.toggle('is-demo', demo);
+    $('familyName').textContent = demo ? 'Ерлан мен Мәдина' : 'Біздің отбасы';
+    $('familySub').textContent = demo ? 'Мысал отбасы' : 'Жеке бюджет';
   }
 
-  function renderKpis(s) {
+  function renderStatus(s) {
     setLong($('kIncome'), money(s.inc), 11);
     setLong($('kExpense'), money(s.exp), 11);
     setLong($('kBalance'), money(s.bal), 11);
     setLong($('mBalance'), money(s.bal), 12);
     $('mBalance').classList.toggle('is-neg', s.bal < 0);
-
-    $('kIncomeNote').textContent = s.incN ? s.incN + ' түсім' : 'Әзірге түсім жоқ';
-    $('kExpenseNote').textContent = s.expN
-      ? s.expN + ' жазба' + (s.inc > 0 ? ' · кірістің ' + pct(s.exp, s.inc) + '%-ы' : '')
-      : 'Әзірге шығыс жоқ';
-
-    var note, meter = 0;
-    if (!s.inc && !s.exp) note = 'Кіріс пен шығысты жазыңыз';
-    else if (s.bal < 0) { note = 'Шығыс кірістен ' + money(-s.bal) + ' асып кетті'; meter = 1; }
-    else if (s.inc > 0) { note = 'Кірістің ' + pct(s.bal, s.inc) + '%-ы қалды'; meter = s.bal / s.inc; }
-    else note = '';
-    $('kBalanceNote').textContent = note;
-    $('kMeter').style.width = (Math.max(0, Math.min(1, meter)) * 100).toFixed(1) + '%';
     $('kBalanceCard').classList.toggle('is-neg', s.bal < 0);
+    $('kIncomeNote').textContent = s.incN ? s.incN + ' түсім' : 'әзірге жоқ';
+    $('kExpenseNote').textContent = s.expN ? s.expN + ' жазба' : 'әзірге жоқ';
+    $('kBalanceNote').textContent = s.bal < 0 ? 'асып кетті' : '';
+    var arc = $('ringArc'), C = 314.16, share = s.share == null ? 0 : Math.max(0, Math.min(1, s.share));
+    arc.style.strokeDashoffset = (C * (1 - share)).toFixed(2);
+    arc.setAttribute('stroke', s.bal < 0 ? 'var(--neg)' : 'var(--accent)');
+    var rv = $('ringVal');
+    rv.textContent = s.share == null ? '—' : (s.share < 0 ? '0%' : pct(s.bal, s.inc) + '%');
+    rv.classList.toggle('is-neg', s.bal < 0);
+    var text, cls = '';
+    if (!s.inc && !s.exp) text = 'Бастау үшін айдың алғашқы кірісін жазыңыз.';
+    else if (!s.inc) { text = 'Бұл айдың кірісі әлі жазылмаған.'; cls = 'is-warn'; }
+    else if (s.bal < 0) { text = 'Шығыс кірістен ' + money(-s.bal) + ' асып кетті. Ең үлкен санатты қарап шығыңыз.'; cls = 'is-bad'; }
+    else if (s.share >= 0.2) text = 'Жақсы нәтиже! Кірістің 20%-ынан көбі қалып тұр.';
+    else { text = 'Кірістің кемінде 20%-ын сақтап қалуға тырысыңыз.'; cls = 'is-warn'; }
+    $('statusHint').className = 'hint ' + cls;
+    $('statusHintText').textContent = text;
   }
 
   var SVGNS = 'http://www.w3.org/2000/svg';
   function arcPath(cx, cy, r, a0, a1) {
-    var x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
-    var x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-    var large = (a1 - a0) > Math.PI ? 1 : 0;
-    return 'M' + x0.toFixed(3) + ' ' + y0.toFixed(3) + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1.toFixed(3) + ' ' + y1.toFixed(3);
+    var x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0), x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    return 'M' + x0.toFixed(3) + ' ' + y0.toFixed(3) + ' A' + r + ' ' + r + ' 0 ' + ((a1 - a0) > Math.PI ? 1 : 0) + ' 1 ' + x1.toFixed(3) + ' ' + y1.toFixed(3);
   }
   function renderDonut(s) {
     var g = $('donutSegs');
@@ -995,68 +1465,49 @@ svg { flex: none; }
     var items = CAT_ORDER.map(function (k) { return { k: k, v: s.byCat[k] }; });
     var drawn = items.filter(function (i) { return i.v > 0; }).sort(function (a, b) { return b.v - a.v; });
     if (state.activeCat && !s.byCat[state.activeCat]) state.activeCat = null;
-
+    function seg(el, k) {
+      el.setAttribute('fill', 'none'); el.setAttribute('stroke', CATS[k].color); el.setAttribute('stroke-width', W);
+      el.setAttribute('class', 'seg-path'); el.dataset.cat = k;
+      el.addEventListener('pointerenter', function () { setActiveCat(k); });
+      el.addEventListener('pointerleave', function () { setActiveCat(null); });
+      el.addEventListener('click', function () { setActiveCat(state.activeCat === k ? null : k); });
+      g.appendChild(el);
+    }
     if (drawn.length === 1) {
       var c = document.createElementNS(SVGNS, 'circle');
       c.setAttribute('cx', 100); c.setAttribute('cy', 100); c.setAttribute('r', R);
-      c.setAttribute('fill', 'none'); c.setAttribute('stroke', CATS[drawn[0].k].color); c.setAttribute('stroke-width', W);
-      c.setAttribute('class', 'seg-path'); c.dataset.cat = drawn[0].k;
-      g.appendChild(c);
+      seg(c, drawn[0].k);
     } else if (drawn.length > 1) {
       var gap = 2.6 / R, a = -Math.PI / 2;
       drawn.forEach(function (it) {
-        var sweep = it.v / total * Math.PI * 2;
-        var a0 = a + gap / 2, a1 = a + sweep - gap / 2;
-        if (a1 - a0 > 0.002) {
-          var p = document.createElementNS(SVGNS, 'path');
-          p.setAttribute('d', arcPath(100, 100, R, a0, a1));
-          p.setAttribute('fill', 'none'); p.setAttribute('stroke', CATS[it.k].color); p.setAttribute('stroke-width', W);
-          p.setAttribute('class', 'seg-path'); p.dataset.cat = it.k;
-          g.appendChild(p);
-        }
+        var sweep = it.v / total * Math.PI * 2, a0 = a + gap / 2, a1 = a + sweep - gap / 2;
+        if (a1 - a0 > 0.002) { var p = document.createElementNS(SVGNS, 'path'); p.setAttribute('d', arcPath(100, 100, R, a0, a1)); seg(p, it.k); }
         a += sweep;
       });
     }
-    [].forEach.call(g.children, function (el) {
-      el.addEventListener('pointerenter', function () { setActiveCat(el.dataset.cat); });
-      el.addEventListener('pointerleave', function () { setActiveCat(null); });
-      el.addEventListener('click', function () { setActiveCat(state.activeCat === el.dataset.cat ? null : el.dataset.cat, true); });
-    });
-
     var legend = $('legend');
     legend.textContent = '';
-    var ordered = items.slice().sort(function (a, b) { return b.v - a.v || CAT_ORDER.indexOf(a.k) - CAT_ORDER.indexOf(b.k); });
-    ordered.forEach(function (it) {
-      var b = h('button', {
-        class: 'leg' + (it.v ? '' : ' is-zero'), type: 'button', 'data-cat': it.k, style: '--c:' + CATS[it.k].color,
-        'aria-label': CATS[it.k].name + ': ' + money(it.v) + ', ' + pct(it.v, total) + '%'
-      },
+    items.slice().sort(function (a, b) { return b.v - a.v || CAT_ORDER.indexOf(a.k) - CAT_ORDER.indexOf(b.k); }).forEach(function (it) {
+      var b = h('button', { class: 'leg' + (it.v ? '' : ' is-zero'), type: 'button', 'data-cat': it.k, style: '--c:' + CATS[it.k].color, 'aria-label': CATS[it.k].name + ': ' + money(it.v) + ', ' + pct(it.v, total) + '%' },
         h('span', { class: 'sw', 'aria-hidden': 'true' }),
         h('span', { class: 'leg-name' }, CATS[it.k].name),
         h('span', { class: 'leg-val' }, money(it.v)),
-        h('span', { class: 'leg-pct' }, total ? pct(it.v, total) + '%' : '—')
-      );
+        h('span', { class: 'leg-pct' }, total ? pct(it.v, total) + '%' : '—'));
       if (it.v) {
         b.addEventListener('pointerenter', function () { setActiveCat(it.k); });
         b.addEventListener('pointerleave', function () { setActiveCat(null); });
         b.addEventListener('focus', function () { setActiveCat(it.k); });
         b.addEventListener('blur', function () { setActiveCat(null); });
-        b.addEventListener('click', function () { setActiveCat(state.activeCat === it.k ? null : it.k, true); });
+        b.addEventListener('click', function () { setActiveCat(state.activeCat === it.k ? null : it.k); });
       }
       legend.appendChild(h('li', null, b));
     });
     paintDonutCenter(s);
   }
-  var lastSummary = null;
-  function setActiveCat(k) {
-    state.activeCat = k;
-    paintDonutCenter(lastSummary || summarize());
-  }
+  function setActiveCat(k) { state.activeCat = k; paintDonutCenter(lastSummary || summarize()); }
   function paintDonutCenter(s) {
-    lastSummary = s;
     var k = state.activeCat;
-    var donut = $('donut');
-    donut.classList.toggle('has-active', !!k);
+    $('donut').classList.toggle('has-active', !!k);
     [].forEach.call($('donutSegs').children, function (el) { el.classList.toggle('is-on', el.dataset.cat === k); });
     [].forEach.call($('legend').querySelectorAll('.leg'), function (el) { el.classList.toggle('is-on', el.dataset.cat === k); });
     if (k) {
@@ -1071,113 +1522,469 @@ svg { flex: none; }
   }
 
   function emptyState(iconKey, title, text, action) {
-    return h('div', { class: 'empty' },
-      h('span', { class: 'empty-ico', html: icon(ICON_PATHS[iconKey], 22) }),
-      h('strong', null, title),
-      text ? h('p', null, text) : null,
-      action || null
-    );
+    return h('div', { class: 'empty' }, h('span', { class: 'empty-ico', html: icon(iconKey, 22) }), h('strong', null, title), text ? h('p', null, text) : null, action || null);
   }
 
   function renderMembers(s) {
     var box = $('members');
     box.textContent = '';
-    if (!s.members.length) {
-      box.appendChild(emptyState('people', 'Бұл айда шығыс әлі жоқ', 'Шығыс жазылғанда, мұнда әр адамның жұмсаған сомасы көрінеді.'));
-      return;
-    }
-    var max = s.members[0].sum;
-    var ul = h('ul', { class: 'mems' });
+    if (!s.members.length) { box.appendChild(emptyState('people', 'Бұл айда шығыс әлі жоқ', 'Шығыс жазылғанда, мұнда әр адамның жұмсаған сомасы көрінеді.')); return; }
+    var max = s.members[0].sum, ul = h('ul', { class: 'mems' });
     s.members.forEach(function (m) {
       ul.appendChild(h('li', { class: 'mem' },
         h('div', { class: 'mem-top' },
           h('span', { class: 'ava', 'aria-hidden': 'true' }, upperFirst(m.name.charAt(0))),
           h('span', { class: 'mem-name' }, m.name, h('small', null, m.n + ' шығыс')),
-          h('span', { class: 'mem-val' }, money(m.sum))
-        ),
+          h('span', { class: 'mem-val' }, money(m.sum))),
         h('div', { class: 'mem-bar-row', 'aria-hidden': 'true' },
           h('div', { class: 'bar' }, h('span', { style: 'width:' + (m.sum / max * 100).toFixed(1) + '%' })),
-          h('span', { class: 'mem-pct' }, pct(m.sum, s.exp) + '%')
-        )
-      ));
+          h('span', { class: 'mem-pct' }, pct(m.sum, s.exp) + '%'))));
     });
     box.appendChild(ul);
+    var lead = s.members[0];
+    var note = s.members.length > 1
+      ? 'Ең көп жұмсаған — ' + lead.name + ': отбасы шығысының ' + pct(lead.sum, s.exp) + '%-ы.'
+      : 'Бұл айда шығысты тек ' + lead.name + ' жазды.';
+    box.appendChild(h('div', { class: 'card-foot' }, h('div', { class: 'hint', style: 'margin-top:0' }, h('span', { html: icon('people', 18), style: 'display:inline-grid' }), h('span', null, note))));
   }
 
+  function matches(r, q) {
+    if (!q) return true;
+    var hay = [r.note || '', r.member, r.type === 'income' ? 'кіріс' : 'шығыс ' + CATS[r.category].name, String(r.amount)].join(' ');
+    return lower(hay).indexOf(q) !== -1;
+  }
   function renderHistory() {
     var box = $('history');
     box.textContent = '';
-    var list = records().slice().sort(function (a, b) { return Date.parse(b.createdAt) - Date.parse(a.createdAt); });
+    var q = lower(state.query.trim());
+    var all = records().slice().sort(function (a, b) { return Date.parse(b.createdAt) - Date.parse(a.createdAt); });
+    var list = all.filter(function (r) { return matches(r, q); });
     $('histCount').textContent = list.length;
-    if (!list.length) {
-      box.appendChild(emptyState('list', 'Әзірге жазба жоқ',
-        'Алғашқы кірісті немесе шығысты қосыңыз. Сайттың қалай жұмыс істейтінін көру үшін мысалды ашыңыз.',
-        h('button', { class: 'btn btn-ghost', type: 'button', onclick: enterDemo }, 'Мысалды көру')));
+    $('filterPill').hidden = !q;
+    if (q) $('filterText').textContent = '«' + state.query.trim() + '» · ' + list.length + ' жазба';
+    if (!all.length) {
+      box.appendChild(emptyState('list', 'Әзірге жазба жоқ', 'Алғашқы кірісті немесе шығысты қосыңыз. Сайттың қалай жұмыс істейтінін көру үшін мысалды ашыңыз.',
+        h('div', { class: 'chips' },
+          h('button', { class: 'btn btn-primary', type: 'button', onclick: openEntry }, 'Жазба қосу'),
+          h('button', { class: 'btn btn-ghost', type: 'button', onclick: enterDemo }, 'Мысалды көру'))));
       $('moreBtn').hidden = true;
       return;
     }
-    var shown = list.slice(0, state.histLimit);
-    var groups = [];
+    if (!list.length) { box.appendChild(emptyState('search', 'Ештеңе табылмады', 'Басқа сөзбен іздеп көріңіз: есім, санат немесе сипаттама.')); $('moreBtn').hidden = true; return; }
+    var shown = list.slice(0, state.histLimit), groups = [], totals = {};
     shown.forEach(function (r) {
-      var d = new Date(r.createdAt), k = monthKey(d);
-      var g = groups[groups.length - 1];
+      var d = new Date(r.createdAt), k = monthKey(d), g = groups[groups.length - 1];
       if (!g || g.k !== k) { g = { k: k, label: MONTHS[d.getMonth()] + ' ' + d.getFullYear(), items: [] }; groups.push(g); }
       g.items.push(r);
     });
-    var totals = {};
     list.forEach(function (r) { var k = monthKey(new Date(r.createdAt)); totals[k] = (totals[k] || 0) + 1; });
     groups.forEach(function (g) {
       var ul = h('ul', { class: 'ops' });
       g.items.forEach(function (r) { ul.appendChild(opRow(r)); });
-      box.appendChild(h('div', { class: 'hgroup' },
-        h('div', { class: 'hgroup-head' }, h('span', null, g.label), h('span', null, totals[g.k] + ' жазба')),
-        ul));
+      box.appendChild(h('div', { class: 'hgroup' }, h('div', { class: 'hgroup-head' }, h('span', null, g.label), h('span', null, totals[g.k] + ' жазба')), ul));
     });
     var rest = list.length - shown.length;
     $('moreBtn').hidden = rest <= 0;
     $('moreBtn').textContent = 'Тағы көрсету (' + rest + ')';
     state.flashId = null;
   }
-
   function opRow(r) {
-    var isInc = r.type === 'income';
-    var cat = isInc ? null : CATS[r.category];
+    var isInc = r.type === 'income', cat = isInc ? null : CATS[r.category];
     var title = r.note || (isInc ? 'Кіріс' : cat.name);
-    var li = h('li', { class: 'op' + (r.id === state.flashId ? ' is-new' : ''), style: cat ? '--c:' + cat.color : null },
-      h('span', { class: 'op-ico' + (isInc ? ' is-income' : ''), html: icon(ICON_PATHS[isInc ? 'income' : r.category], 20) }),
+    return h('li', { class: 'op' + (r.id === state.flashId ? ' is-new' : ''), style: cat ? '--c:' + cat.color : null },
+      h('span', { class: 'op-ico' + (isInc ? ' is-income' : ''), html: icon(isInc ? 'income' : r.category, 20) }),
       h('span', { class: 'op-title' }, title),
       h('span', { class: 'op-amt' + (isInc ? ' pos' : '') }, (isInc ? '+' : '−') + fmtNum(r.amount) + NB + '₸'),
       h('span', { class: 'op-meta' },
-        isInc
-          ? h('span', { class: 'tag is-income' }, h('i'), 'Кіріс')
-          : h('span', { class: 'tag' }, h('i'), cat.name),
-        h('span', { class: 'op-who' }, r.member + ' · ' + whenLabel(new Date(r.createdAt)))
-      ),
-      h('button', {
-        class: 'icon-btn op-del', type: 'button', title: 'Жою',
-        'aria-label': 'Жазбаны жою: ' + title + ', ' + fmtNum(r.amount) + ' теңге',
-        html: icon(ICON_PATHS.trash, 18),
-        onclick: function () { askDelete(r); }
-      })
-    );
-    return li;
+        isInc ? h('span', { class: 'tag is-income' }, h('i'), 'Кіріс') : h('span', { class: 'tag' }, h('i'), cat.name),
+        h('span', { class: 'op-who' }, r.member + ' · ' + whenLabel(new Date(r.createdAt)))),
+      h('button', { class: 'icon-btn op-del', type: 'button', title: 'Жою', 'aria-label': 'Жазбаны жою: ' + title + ', ' + fmtNum(r.amount) + ' теңге', html: icon('trash', 18), onclick: function () { askDelete(r); } }));
   }
-
   function renderNameChips() {
     var box = $('nameChips');
     box.textContent = '';
-    var names = knownNames().slice(0, 6);
-    var cur = lower($('member').value.trim());
+    var names = knownNames().slice(0, 6), cur = lower($('member').value.trim());
     names.forEach(function (n) {
-      box.appendChild(h('button', {
-        class: 'chip' + (lower(n) === cur ? ' is-on' : ''), type: 'button',
-        onclick: function () { $('member').value = n; clearErr('member'); renderNameChips(); }
-      }, n));
+      box.appendChild(h('button', { class: 'chip' + (lower(n) === cur ? ' is-on' : ''), type: 'button', onclick: function () { $('member').value = n; clearErr('member'); renderNameChips(); } }, n));
     });
     box.hidden = !names.length;
   }
 
-  /* ---------- form ---------- */
+  /* ---------- reminders ---------- */
+  function reminderItems() {
+    var now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    var util = now.getDate() <= 25 ? new Date(y, m, 25) : new Date(y, m + 1, 25);
+    return [
+      { icon: 'calendar', title: 'Айлық бюджетті тексеру', when: now.getHours() < 20 ? 'Бүгін, 20:00' : 'Ертең, 20:00' },
+      { icon: 'bell', title: 'Коммуналдық төлемдер', when: dayLabel(util), warn: true },
+      { icon: 'card', title: 'Айдың қорытындысы', when: dayLabel(new Date(y, m + 1, 0)) }
+    ];
+  }
+  function renderReminders() {
+    [$('reminders'), $('bellList')].forEach(function (ul) {
+      ul.textContent = '';
+      reminderItems().forEach(function (it) {
+        ul.appendChild(h('li', null, h('span', { class: 'rem-ico' + (it.warn ? ' warn' : ''), html: icon(it.icon, 18) }), h('span', null, h('span', { class: 'rem-title' }, it.title), h('span', { class: 'rem-when' }, it.when))));
+      });
+    });
+  }
+
+  /* ---------- tools ---------- */
+  var TOOLS = [
+    { id: 'budget', name: 'Бюджет калькуляторы', icon: 'wallet' },
+    { id: 'goal', name: 'Мақсатқа жету есебі', icon: 'target' },
+    { id: 'buy', name: 'Сатып алу шешімі', icon: 'cart' },
+    { id: 'loan', name: 'Несие калькуляторы', icon: 'percent' },
+    { id: 'fraud', name: 'Алаяқтықты анықтау', icon: 'shield' },
+    { id: 'tax', name: 'Салық есептегіші', icon: 'calc', soon: true }
+  ];
+  function renderTools() {
+    var box = $('tools');
+    TOOLS.forEach(function (t) {
+      box.appendChild(h('button', { class: 'tool', type: 'button', 'data-tool': t.id },
+        t.soon ? h('span', { class: 'soon' }, 'Жақында') : null,
+        h('span', { class: 'tool-ico', html: icon(t.icon, 22) }), t.name));
+    });
+  }
+  function moneyField(label, value) {
+    var id = 'f' + uid();
+    var input = h('input', { class: 'input', id: id, inputmode: 'numeric', autocomplete: 'off', placeholder: '0' });
+    if (value) input.value = fmtNum(value);
+    input.addEventListener('input', function () { var d = this.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10); this.value = d ? fmtNum(+d) : ''; });
+    return { el: h('div', { class: 'field' }, h('label', { for: id }, label), h('div', { class: 'suffix-wrap' }, input, h('span', { class: 'cur' }, '₸'))), input: input, get: function () { return digits(input.value); } };
+  }
+  function numField(label, suffix, max) {
+    var id = 'f' + uid();
+    var input = h('input', { class: 'input', id: id, inputmode: 'decimal', autocomplete: 'off', placeholder: '0' });
+    input.addEventListener('input', function () { this.value = this.value.replace(',', '.').replace(/[^\d.]/g, ''); });
+    return { el: h('div', { class: 'field' }, h('label', { for: id }, label), h('div', { class: 'suffix-wrap' }, input, h('span', { class: 'cur' }, suffix))), input: input, get: function () { var n = parseFloat(input.value); return isFinite(n) ? Math.min(n, max) : 0; } };
+  }
+  function row(label, value, note, cls) { return h('div', { class: 'calc-row' + (cls ? ' ' + cls : '') }, h('span', null, label), h('b', null, value), note ? h('small', null, note) : null); }
+  function bindCalc(fields, out, fn) { fields.forEach(function (f) { f.input.addEventListener('input', function () { out.textContent = ''; fn(); }); }); fn(); }
+  function monthsSpan(n) { var y = Math.floor(n / 12), mo = n % 12; return ((y ? y + ' жыл ' : '') + (mo ? mo + ' ай' : '')).trim(); }
+  function monthsLabel(n) { var d = new Date(); d.setMonth(d.getMonth() + n); return monthsSpan(n) + ' · ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+
+  var FRAUD = [
+    'Сізден SMS-код, CVV немесе PIN-код сұрайды.',
+    '«Банк қызметкерімін», «полициямын» деп өзі хабарласып, шұғыл әрекет талап етеді.',
+    'Тым жоғары табыс немесе «тез ақша» уәде етеді.',
+    'Бейтаныс сілтемені ашуды немесе қосымша орнатуды сұрайды.',
+    'Туысым деп жазып, ақша аударуды өтінеді, бірақ қоңырау шалуға болмайды дейді.',
+    'Ұтыс немесе несие үшін алдын ала төлем, «комиссия» сұрайды.'
+  ];
+  var TIPS = [
+    ['SMS-кодты ешкімге бермеңіз!', 'Банк қызметкерлері де сізден код сұрамайды.'],
+    ['Бейтаныс сілтемені ашпаңыз', 'Ұтыс пен жеңілдік туралы хабарламалар көбіне алаяқтардан келеді.'],
+    ['Күмәндансаңыз, қоңырауды үзіңіз', 'Банктің картаңыздағы ресми нөміріне өзіңіз хабарласыңыз.'],
+    ['Картаның суретін жібермеңіз', 'Карта нөмірі мен оның артындағы код — ақшаңыздың кілті.']
+  ];
+  function openTool(id) {
+    var s = summarize(), t = TOOLS.filter(function (x) { return x.id === id; })[0];
+    if (!t) return;
+    if (t.soon) { toast('«' + t.name + '» жақында қосылады'); return; }
+    var body = [], out = h('div', { class: 'calc-out', 'aria-live': 'polite' });
+    if (id === 'budget') {
+      var inc = moneyField('Айлық кіріс', s.inc);
+      body.push(h('p', { class: 'dlg-lead' }, 'Кірісті үш бөлікке бөлудің қарапайым тәсілі. Бұл айдың кірісі өзі қойылды, қаласаңыз өзгертіңіз.'), inc.el, out);
+      bindCalc([inc], out, function () {
+        var v = inc.get();
+        if (!v) { out.appendChild(h('p', { class: 'muted' }, 'Кірісті жазыңыз: біз оны 50/30/20 ережесімен бөлеміз.')); return; }
+        out.appendChild(row('Міндетті шығыстар · 50%', money(v * .5), 'Үй, азық-түлік, көлік, коммуналдық төлемдер'));
+        out.appendChild(row('Қалаулар · 30%', money(v * .3), 'Демалыс, кафе, киім, сыйлықтар'));
+        out.appendChild(row('Жинақ · 20%', money(v * .2), 'Қаржы жастығы, мақсат, қарызды ерте өтеу', 'hl'));
+        if (s.inc && v === s.inc && s.exp) {
+          out.appendChild(h('p', { class: 'dlg-note' }, 'Бұл айда кірістің ' + pct(s.exp, s.inc) + '%-ы жұмсалды. ' + (s.exp / s.inc <= 0.8 ? 'Жинаққа кемінде 20% қалады, ереже орындалып тұр.' : 'Жинаққа 20%-дан аз қалады: қалаулар бөлігін қысқартып көріңіз.')));
+        }
+      });
+    } else if (id === 'goal') {
+      var g = goal();
+      var tgt = moneyField('Мақсат сомасы', g ? g.target : 0), have = moneyField('Қазір жиналғаны', Math.max(0, s.allBal)), per = moneyField('Айына қанша сала аласыз', s.bal > 0 ? Math.round(s.bal / 1000) * 1000 : 0);
+      body.push(h('p', { class: 'dlg-lead' }, 'Мақсатқа қашан жететініңізді есептейміз.'), h('div', { class: 'grid2' }, tgt.el, have.el), per.el, out);
+      bindCalc([tgt, have, per], out, function () {
+        var T = tgt.get(), H = have.get(), M = per.get();
+        if (!T) { out.appendChild(h('p', { class: 'muted' }, 'Мақсат сомасын жазыңыз.')); return; }
+        if (H >= T) { out.appendChild(row('Нәтиже', 'Жеттіңіз!', 'Жиналған сома мақсаттан асады', 'hl')); return; }
+        if (!M) { out.appendChild(h('p', { class: 'muted' }, 'Айына қанша сала алатыныңызды жазыңыз.')); return; }
+        var n = Math.ceil((T - H) / M);
+        out.appendChild(row('Қажет уақыт', monthsSpan(n), 'Шамамен ' + monthsLabel(n).split(' · ')[1] + '. Тағы ' + money(T - H) + ' жинау керек.', 'hl'));
+        out.appendChild(row('Екі есе тез жету үшін', money(M * 2) + ' / ай', 'Сонда ' + monthsSpan(Math.ceil(n / 2))));
+      });
+    } else if (id === 'buy') {
+      var price = moneyField('Тауардың бағасы', 0);
+      body.push(h('p', { class: 'dlg-lead' }, 'Сатып алу бюджетке қалай әсер ететінін көрсетеміз.'), price.el, out);
+      bindCalc([price], out, function () {
+        var v = price.get();
+        if (!v) { out.appendChild(h('p', { class: 'muted' }, 'Бағаны жазыңыз.')); return; }
+        if (s.inc > 0) out.appendChild(row('Кірістің неше күні', Math.max(1, Math.round(v / (s.inc / 30))) + ' күн', 'Бұл айдың кірісі бойынша есептелді'));
+        if (s.bal > 0) {
+          var share = v / s.bal;
+          out.appendChild(row('Айдың қалдығынан', pct(v, s.bal) + '%', 'Қалдық: ' + money(s.bal), share > 1 ? 'bad' : (share > .5 ? '' : 'hl')));
+          out.appendChild(h('p', { class: 'dlg-note' }, share > 1 ? 'Қалдық жетпейді. Сатып алуды кейінге қалдырып, бірнеше ай жинаған дұрыс.' : share > .5 ? 'Қалдықтың жартысынан көбі. 24 сағат ойланып, сосын шешім қабылдаңыз.' : 'Бюджетке әсері аз: қалдық жеткілікті.'));
+        } else {
+          out.appendChild(h('p', { class: 'dlg-note' }, 'Бұл айда бос қалдық жоқ. Алдымен кіріс пен шығысты жазыңыз.'));
+        }
+      });
+    } else if (id === 'loan') {
+      var sum = moneyField('Несие сомасы', 0), rate = numField('Жылдық мөлшерлеме', '%', 200), term = numField('Мерзімі', 'ай', 600);
+      body.push(h('p', { class: 'dlg-lead' }, 'Аннуитет бойынша ай сайынғы төлемді есептейміз.'), sum.el, h('div', { class: 'grid2' }, rate.el, term.el), out);
+      bindCalc([sum, rate, term], out, function () {
+        var Pv = sum.get(), r = rate.get(), n = Math.round(term.get());
+        if (!Pv || !n) { out.appendChild(h('p', { class: 'muted' }, 'Соманы, мөлшерлемені және мерзімді жазыңыз.')); return; }
+        var i = r / 1200, pay = i ? Pv * i / (1 - Math.pow(1 + i, -n)) : Pv / n;
+        out.appendChild(row('Ай сайынғы төлем', money(pay), null, 'hl'));
+        out.appendChild(row('Артық төлем', money(pay * n - Pv), 'Жалпы төлем: ' + money(pay * n)));
+        if (s.inc) { var heavy = pay / s.inc > 1 / 3; out.appendChild(row('Кірістің үлесі', pct(pay, s.inc) + '%', heavy ? 'Үштен бірінен асады: тәуекел жоғары' : 'Үштен бірінен аспайды', heavy ? 'bad' : '')); }
+        out.appendChild(h('p', { class: 'dlg-note' }, 'Есеп шамамен. Нақты шартты банктің СЖТМ бойынша тексеріңіз.'));
+      });
+    } else if (id === 'fraud') {
+      setFlag('safety');
+      body.push(h('p', { class: 'dlg-lead' }, 'Мына белгілердің бірі болса, тоқтаңыз: бұл алаяқ болуы мүмкін.'));
+      body.push(h('ul', { class: 'checklist' }, FRAUD.map(function (f) { return h('li', null, h('span', { class: 'n', html: icon('x', 16) }), h('span', null, f)); })));
+      body.push(row('Не істеу керек', 'Қоңырауды үзіңіз', 'Банктің картаңыздағы ресми нөміріне өзіңіз хабарласыңыз', 'hl'));
+    }
+    openPanel(t.name, '', body);
+  }
+
+  /* ---------- goal ---------- */
+  var HOUSE_SVG = '<svg viewBox="0 0 120 100" aria-hidden="true"><ellipse cx="60" cy="94" rx="54" ry="6" fill="var(--ill-shadow)"/><circle cx="100" cy="66" r="13" fill="var(--ill-leaf-2)"/><rect x="98" y="74" width="4" height="20" rx="1" fill="var(--ill-leaf-3)"/><rect x="22" y="50" width="64" height="44" rx="3" fill="var(--surface)"/><path d="M14 54 L54 22 L94 54 Z" fill="var(--accent)"/><path d="M14 54 L54 22 L94 54" stroke="var(--accent-hover)" stroke-width="3" fill="none" stroke-linejoin="round"/><rect x="46" y="68" width="16" height="26" rx="2" fill="var(--ill-coin-d)"/><rect x="29" y="62" width="12" height="12" rx="2" fill="var(--ill-sky)"/><rect x="67" y="62" width="12" height="12" rx="2" fill="var(--ill-sky)"/><rect x="70" y="30" width="8" height="14" fill="var(--accent-hover)"/></svg>';
+  function renderGoal(s) {
+    var box = $('goalBox');
+    box.textContent = '';
+    var g = goal();
+    if (state.editingGoal) { box.appendChild(goalForm(g)); return; }
+    var art = h('div', { class: 'goal-art', html: HOUSE_SVG });
+    if (!g) {
+      box.appendChild(h('div', { class: 'goal' }, art, h('div', null, h('p', { class: 'goal-name' }, 'Мақсат қойыңыз'), h('p', { class: 'goal-meta', style: 'margin-top:4px' }, 'Үй, көлік, демалыс немесе қаржы жастығы. Жиналған қалдықты мақсатқа санаймыз.'))));
+      box.appendChild(h('div', { class: 'card-foot' }, h('button', { class: 'btn btn-soft btn-block', type: 'button', onclick: function () { state.editingGoal = true; renderGoal(summarize()); } }, 'Мақсат қою')));
+      return;
+    }
+    var saved = Math.max(0, s.allBal), p = Math.min(100, Math.round(saved / g.target * 100)), left = g.target - saved, eta;
+    if (left <= 0) eta = 'Мақсатқа жеттіңіз!';
+    else if (s.bal > 0) eta = 'Қалған уақыт: шамамен ' + monthsSpan(Math.ceil(left / s.bal));
+    else eta = 'Қалдық болған айда мерзімін есептейміз';
+    box.appendChild(h('div', { class: 'goal' }, art, h('div', { style: 'min-width:0' },
+      h('p', { class: 'goal-name' }, g.name),
+      h('p', { class: 'goal-target' }, money(g.target)),
+      h('div', { class: 'prog-row' }, h('div', { class: 'prog', role: 'progressbar', 'aria-valuenow': p, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-label': 'Мақсатқа жету' }, h('span', { style: 'width:' + p + '%' })), h('span', { class: 'prog-pct' }, p + '%')),
+      h('p', { class: 'goal-meta' }, eta))));
+    box.appendChild(h('div', { class: 'goal-stats' },
+      h('div', null, h('span', null, 'Жиналғаны'), h('b', null, money(saved))),
+      h('div', null, h('span', null, left > 0 ? 'Қалғаны' : 'Артығы'), h('b', null, money(Math.abs(left))))));
+    box.appendChild(h('p', { class: 'goal-meta', style: 'margin-top:10px' }, 'Барлық айлардың қалдығы мақсатқа есептеледі.'));
+    box.appendChild(h('div', { class: 'card-foot' }, h('button', { class: 'btn btn-soft btn-block', type: 'button', onclick: function () { state.editingGoal = true; renderGoal(summarize()); } }, 'Жоспарды өзгерту')));
+  }
+  function goalForm(g) {
+    var name = h('input', { class: 'input', id: 'goalName', maxlength: '40', placeholder: 'Мысалы, үй алу', value: g ? g.name : '' });
+    var amt = moneyField('Сомасы', g ? g.target : 0);
+    var err = h('p', { class: 'err', hidden: true });
+    var f = h('form', { class: 'goal-form', novalidate: true },
+      h('div', { class: 'field' }, h('label', { for: 'goalName' }, 'Мақсат'), name), amt.el, err,
+      h('div', { class: 'row2' },
+        h('button', { class: 'btn btn-ghost', type: 'button', onclick: function () { state.editingGoal = false; renderGoal(summarize()); } }, 'Болдырмау'),
+        h('button', { class: 'btn btn-primary', type: 'submit' }, 'Сақтау')),
+      g ? h('button', { class: 'link', type: 'button', style: 'align-self:center;color:var(--neg)', onclick: function () { saveGoal(null); } }, 'Мақсатты өшіру') : null);
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = name.value.trim().replace(/\s+/g, ' '), v = amt.get();
+      if (!n || !v) { err.textContent = !n ? 'Мақсаттың атын жазыңыз' : 'Соманы жазыңыз'; err.hidden = false; return; }
+      saveGoal({ name: upperFirst(n), target: Math.min(v, MAX_AMOUNT * 10) });
+    });
+    setTimeout(function () { name.focus(); }, 30);
+    return f;
+  }
+  function saveGoal(g) {
+    state.editingGoal = false;
+    if (isDemo()) state.demoGoal = g;
+    else { state.goal = g; try { if (g) localStorage.setItem(GOAL_KEY, JSON.stringify(g)); else localStorage.removeItem(GOAL_KEY); } catch (e) {} }
+    render();
+    toast(g ? 'Мақсат сақталды' : 'Мақсат өшірілді');
+  }
+
+  /* ---------- scenario ---------- */
+  function renderScenario(s) {
+    var chips = $('scenChips');
+    if (!chips.children.length) {
+      [10, 20, 30].forEach(function (v) {
+        chips.appendChild(h('button', { class: 'chip', type: 'button', 'data-pct': v, onclick: function () { state.scenPct = v; renderScenario(summarize()); } }, v + '%-ға азайса'));
+      });
+    }
+    [].forEach.call(chips.children, function (c) { var on = +c.dataset.pct === state.scenPct; c.classList.toggle('is-on', on); c.setAttribute('aria-pressed', String(on)); });
+    var out = $('scenOut');
+    out.textContent = '';
+    if (!s.inc) { out.appendChild(h('span', null, 'Есептеу үшін алдымен айдың кірісін жазыңыз.')); return; }
+    var newInc = s.inc * (1 - state.scenPct / 100), newBal = newInc - s.exp;
+    out.appendChild(h('span', null, 'Кіріс ' + money(newInc) + ' болса, қалдық:'));
+    out.appendChild(h('span', { class: 'big ' + (newBal < 0 ? 'is-neg' : 'is-pos') }, money(newBal)));
+    if (newBal >= 0) out.appendChild(h('span', null, 'Бюджет төтеп береді.'));
+    else out.appendChild(h('span', null, 'Жетпейді. Ең үлкен санат — ', h('strong', null, CATS[s.topCat].name), ': оны ' + money(-newBal) + '-ге қысқарту керек.'));
+  }
+
+  /* ---------- safety tips ---------- */
+  function renderTip() {
+    var t = TIPS[state.tipIdx];
+    $('safeTitle').textContent = t[0];
+    $('safeText').textContent = t[1];
+    var d = $('safeDots'); d.textContent = '';
+    TIPS.forEach(function (_, i) { d.appendChild(h('i', { class: i === state.tipIdx ? 'on' : null })); });
+  }
+  $('nextTip').addEventListener('click', function () { state.tipIdx = (state.tipIdx + 1) % TIPS.length; renderTip(); });
+
+  /* ---------- achievements ---------- */
+  var ACH = [
+    { name: 'Білімгер', icon: 'book', how: '«Пайдалы ақпараттан» бір мақала оқыңыз', test: function (s, f) { return !!f.read; } },
+    { name: 'Үнемшіл', icon: 'wallet', how: 'Айда кірістің 20%-ынан көбін сақтап қалыңыз', test: function (s) { return s.share != null && s.share >= 0.2; } },
+    { name: 'Мақсаткер', icon: 'target', how: 'Қаржылық мақсат қойыңыз', test: function () { return !!goal(); } },
+    { name: 'Қауіпсіз пайдаланушы', icon: 'shield', how: 'Алаяқтық белгілерімен танысыңыз', test: function (s, f) { return !!f.safety; } }
+  ];
+  function shieldSvg(on, iconName) {
+    var fill = on ? 'var(--accent)' : 'var(--line-strong)', inner = on ? 'var(--accent-hover)' : 'var(--line)', ink = on ? '#ffffff' : 'var(--ink-3)';
+    return '<svg class="shield" viewBox="0 0 48 52" aria-hidden="true"><path d="M24 2 44 9v15c0 13-9 22-20 26C13 46 4 37 4 24V9z" fill="' + fill + '"/><path d="M24 7 39 12.5v11.5c0 10-7 17.2-15 20.5C16 41.2 9 34 9 24V12.5z" fill="' + inner + '" opacity=".55"/>' +
+      '<svg x="14" y="15" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="' + ink + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (on ? P[iconName] : P.lock) + '</svg></svg>';
+  }
+  function renderAchievements(s) {
+    var box = $('badges'), f = flags();
+    box.textContent = '';
+    ACH.forEach(function (a) {
+      var on = a.test(s, f);
+      box.appendChild(h('div', { class: 'badge' + (on ? '' : ' is-locked'), title: on ? a.name : a.how },
+        h('span', { html: shieldSvg(on, a.icon) }), h('span', { class: 'badge-name' }, a.name), h('span', { class: 'badge-state' }, on ? 'Ашылды' : a.how)));
+    });
+  }
+  $('allAch').addEventListener('click', function () {
+    var s = summarize(), f = flags();
+    openPanel('Жетістіктер', 'Сайтты қолданған сайын жаңа белгілер ашылады', [h('div', { class: 'list-btns' }, ACH.map(function (a) {
+      var on = a.test(s, f);
+      return h('div', { class: 'ach-row' }, h('span', { html: shieldSvg(on, a.icon) }), h('span', null, h('b', null, a.name), h('small', null, a.how)), h('span', { class: 'st' + (on ? ' ok' : '') }, on ? 'Ашылды' : 'Жабық'));
+    }))]);
+  });
+
+  /* ---------- articles ---------- */
+  var ART = {
+    coins: '<svg viewBox="0 0 120 90" aria-hidden="true"><ellipse cx="60" cy="82" rx="44" ry="5" fill="var(--ill-shadow)"/><ellipse cx="44" cy="76" rx="18" ry="6" fill="var(--ill-coin-d)"/><rect x="26" y="66" width="36" height="10" fill="var(--ill-coin-d)"/><ellipse cx="44" cy="66" rx="18" ry="6" fill="var(--ill-coin)"/><rect x="26" y="56" width="36" height="10" fill="var(--ill-coin-d)"/><ellipse cx="44" cy="56" rx="18" ry="6" fill="var(--ill-coin)"/><ellipse cx="78" cy="78" rx="18" ry="6" fill="var(--ill-coin-d)"/><rect x="60" y="62" width="36" height="16" fill="var(--ill-coin-d)"/><ellipse cx="78" cy="62" rx="18" ry="6" fill="var(--ill-coin)"/><rect x="60" y="48" width="36" height="14" fill="var(--ill-coin-d)"/><ellipse cx="78" cy="48" rx="18" ry="6" fill="var(--ill-coin)"/><path d="M78 46 V24" stroke="var(--ill-leaf-3)" stroke-width="3" stroke-linecap="round"/><path d="M78 32 C 78 20, 86 12, 98 12 C 98 24, 90 32, 78 32 Z" fill="var(--ill-leaf-2)"/><path d="M78 36 C 78 27, 72 21, 62 21 C 62 30, 68 36, 78 36 Z" fill="var(--ill-leaf-3)"/></svg>',
+    pie: '<svg viewBox="0 0 120 90" aria-hidden="true"><ellipse cx="60" cy="82" rx="40" ry="5" fill="var(--ill-shadow)"/><circle cx="60" cy="44" r="30" fill="var(--ill-leaf)"/><path d="M60 44 V14 A30 30 0 0 1 60 74 Z" fill="var(--accent)"/><path d="M60 44 L60 74 A30 30 0 0 1 31.5 53.3 Z" fill="var(--ill-coin)"/><circle cx="60" cy="44" r="12" fill="var(--surface)"/></svg>',
+    shield: '<svg viewBox="0 0 120 90" aria-hidden="true"><ellipse cx="60" cy="82" rx="40" ry="5" fill="var(--ill-shadow)"/><path d="M60 10 86 19v20c0 18-11 30-26 36-15-6-26-18-26-36V19z" fill="var(--accent)"/><path d="M60 17 79 24v15c0 14-8 23-19 28-11-5-19-14-19-28V24z" fill="var(--accent-hover)" opacity=".5"/><text x="60" y="52" text-anchor="middle" font-size="24" font-weight="700" font-family="Onest, Arial, sans-serif" fill="#ffffff">₸</text></svg>',
+    card: '<svg viewBox="0 0 120 90" aria-hidden="true"><ellipse cx="60" cy="82" rx="40" ry="5" fill="var(--ill-shadow)"/><rect x="22" y="22" width="76" height="50" rx="8" fill="var(--ill-dark-2)" transform="rotate(-8 60 47)"/><rect x="26" y="26" width="76" height="50" rx="8" fill="var(--accent)"/><rect x="34" y="38" width="14" height="10" rx="2" fill="var(--ill-coin)"/><rect x="34" y="60" width="40" height="5" rx="2.5" fill="#ffffff" opacity=".7"/><circle cx="90" cy="62" r="13" fill="var(--surface)"/><text x="90" y="67" text-anchor="middle" font-size="14" font-weight="700" font-family="Onest, Arial, sans-serif" fill="var(--accent-ink)">%</text></svg>'
+  };
+  var ARTICLES = [
+    { title: 'Инфляция деген не және ол бізге қалай әсер етеді?', date: '24 қазан 2026', art: 'coins', body: [
+      'Инфляция — тауарлар мен қызметтер бағасының уақыт өте келе өсуі. Баға өскенде, сол бір мың теңгеге бұрынғыдан аз нәрсе сатып аласыз.',
+      'Отбасы бюджеті үшін бұл екі нәрсені білдіреді: күнделікті шығыстар біртіндеп өседі, ал үйде жатқан қолма-қол ақша құнсызданады.',
+      'Не істеуге болады: шығысты жүйелі жазып отырыңыз, сонда бағаның өсуін бірден байқайсыз. Жинақты қолма-қол емес, депозитте ұстаңыз. Ірі сатып алуды алдын ала жоспарлаңыз.'] },
+    { title: '50/30/20 ережесі: кірісті қалай бөлуге болады?', date: '17 қазан 2026', art: 'pie', body: [
+      'Бұл — кірісті үш бөлікке бөлудің қарапайым тәсілі. 50% — міндетті шығыстар: тұрғын үй, азық-түлік, көлік, коммуналдық төлемдер.',
+      '30% — қалаулар: демалыс, кафе, киім, сыйлықтар. 20% — жинақ және қарызды мерзімінен бұрын өтеу.',
+      'Пропорцияны отбасыңызға қарай өзгертуге болады. Ең бастысы — жинаққа арналған бөлікті айлық түскен күні бірден бөліп қою. Мұны «Бюджет калькуляторы» құралымен есептеп көріңіз.'] },
+    { title: 'Қаржы жастығы: неге 3–6 айлық шығыс керек?', date: '9 қазан 2026', art: 'shield', body: [
+      'Қаржы жастығы — жұмыстан айырылу, ауру немесе кенеттен болған жөндеу сияқты күтпеген жағдайға арналған қор.',
+      'Оның көлемі әдетте отбасының 3–6 айлық міндетті шығысына тең. Мысалы, айына 300 000 ₸ жұмсасаңыз, мақсат — 900 000 ₸-ден 1 800 000 ₸-ге дейін.',
+      'Жастықты бірден жинау міндетті емес: айына кірістің 5–10%-ын бөлек шотқа салудан бастаңыз және бұл ақшаны күнделікті шығысқа жұмсамаңыз.'] },
+    { title: 'Несие алмас бұрын нені тексеру керек?', date: '2 қазан 2026', art: 'card', body: [
+      'Жарнамадағы мөлшерлемеге емес, сыйақының жылдық тиімді мөлшерлемесіне (СЖТМ) қараңыз: онда барлық комиссиялар ескеріледі.',
+      'Ай сайынғы төлем отбасы кірісінің үштен бірінен аспағаны жөн. Әйтпесе кез келген күтпеген шығыс бюджетті бірден бұзады.',
+      'Келісімшартқа қол қоймас бұрын мерзімінен бұрын өтеу шарттарын, айыппұлдарды және сақтандыру міндетті ме екенін сұраңыз. Төлемді «Несие калькуляторымен» алдын ала есептеп алыңыз.'] }
+  ];
+  function renderArticle() {
+    var a = ARTICLES[state.articleIdx], slot = $('articleSlot');
+    slot.textContent = '';
+    slot.appendChild(h('button', { class: 'article', type: 'button', onclick: function () { openArticle(state.articleIdx); } },
+      h('span', { class: 'article-art', html: ART[a.art] }),
+      h('span', null, h('span', { class: 'article-title' }, a.title), h('span', { class: 'article-date' }, a.date))));
+    slot.appendChild(h('p', { class: 'article-ex' }, a.body[0]));
+    slot.appendChild(h('button', { class: 'link article-more', type: 'button', onclick: function () { openArticle(state.articleIdx); } }, 'Оқу', h('span', { html: icon('arrow', 14), style: 'display:inline-grid' })));
+    var dots = $('articleDots');
+    dots.textContent = '';
+    ARTICLES.forEach(function (_, i) {
+      dots.appendChild(h('button', { type: 'button', class: i === state.articleIdx ? 'on' : null, 'aria-pressed': String(i === state.articleIdx), 'aria-label': (i + 1) + '-мақала', onclick: function () { state.articleIdx = i; renderArticle(); } }));
+    });
+  }
+  function openArticle(i) {
+    var a = ARTICLES[i];
+    setFlag('read');
+    openPanel(a.title, a.date, [h('div', { class: 'prose' }, a.body.map(function (p) { return h('p', null, p); }))]);
+  }
+  $('allArticles').addEventListener('click', function () {
+    openPanel('Пайдалы ақпарат', 'Отбасы қаржысы туралы қысқа мақалалар', [h('div', { class: 'list-btns' }, ARTICLES.map(function (a, i) {
+      return h('button', { class: 'list-btn', type: 'button', onclick: function () { openArticle(i); } }, h('span', { class: 'th', html: ART[a.art] }), h('span', null, h('b', null, a.title), h('small', null, a.date)));
+    }))]);
+  });
+
+  /* ---------- assistant: rule-based answers, works without a server ---------- */
+  var SUGS = ['Жинағымды қалай көбейтемін?', 'Қайсысы тиімді: несие немесе жинақ?', 'Қаржылық қауіпсіздік туралы айтшы'];
+  function answer(q) {
+    var t = lower(q), s = summarize();
+    var top = s.exp ? CATS[s.topCat].name + ' (' + money(s.byCat[s.topCat]) + ', шығыстың ' + pct(s.byCat[s.topCat], s.exp) + '%-ы)' : null;
+    if (/несие|кредит|қарыз/.test(t)) return 'Негізгі айырмашылық — мөлшерлеме. Несиенің СЖТМ-і әдетте депозит табысынан жоғары, сондықтан шұғыл қажеттілік болмаса, алдымен жинаған тиімді.\nНесие алсаңыз, ай сайынғы төлем кірістің үштен бірінен аспағаны жөн. Оны «Несие калькуляторымен» есептеп көріңіз.';
+    if (/қауіп|алаяқ|код|карта|сілтеме/.test(t)) { setFlag('safety'); return 'Үш басты ереже:\n1) SMS-кодты, CVV мен PIN-кодты ешкімге айтпаңыз, банк қызметкеріне де.\n2) Бейтаныс сілтемені ашпаңыз, қосымшаны тек ресми дүкеннен орнатыңыз.\n3) Күмәндансаңыз, қоңырауды үзіп, банктің ресми нөміріне өзіңіз хабарласыңыз.'; }
+    if (/жина|үнем|көбейт/.test(t)) {
+      return (s.inc ? 'Бұл айда кірістің ' + (s.share > 0 ? pct(s.bal, s.inc) : 0) + '%-ы қалды. ' : '') +
+        'Жинақты көбейтудің үш жолы:\n1) Айлық түскен күні оның 10–20%-ын бірден бөлек шотқа салыңыз.\n2) Ең үлкен санатты қараңыз' + (top ? ': қазір бұл — ' + top : '') + '.\n3) Ұсақ шығыстарды аптасына бір рет тексеріп отырыңыз.';
+    }
+    if (/қайда|санат|шығыс|жұмса/.test(t)) return top ? 'Бұл айда ең көп шығын — ' + top + '. Барлық шығыс: ' + money(s.exp) + '.' : 'Бұл айда әзірге шығыс жазылмаған.';
+    if (/қалдық|қанша|кіріс|баланс/.test(t)) return s.inc || s.exp ? 'Бұл айда кіріс ' + money(s.inc) + ', шығыс ' + money(s.exp) + ', қалдық ' + money(s.bal) + '.' : 'Бұл айда әзірге жазба жоқ.';
+    if (/сәлем|салем/.test(t)) return 'Сәлеметсіз бе! Жинақ, несие, қауіпсіздік немесе айдың шығыстары туралы сұраңыз.';
+    return 'Мен әзірге бета-нұсқадамын және мына тақырыптарда жауап беремін: жинақ, несие, қаржылық қауіпсіздік, айдың шығыстары мен қалдығы.';
+  }
+  function pushMsg(text, who) { var c = $('chat'), m = h('div', { class: 'msg ' + who }, text); c.appendChild(m); c.scrollTop = c.scrollHeight; return m; }
+  function ask(q) {
+    q = q.trim(); if (!q) return;
+    pushMsg(q, 'me');
+    var typing = pushMsg('Жазып жатыр…', 'bot typing');
+    setTimeout(function () { typing.remove(); pushMsg(answer(q), 'bot'); }, 550);
+  }
+  function initChat() {
+    pushMsg('Сәлем! Қандай сұрағыңыз бар?', 'bot');
+    SUGS.forEach(function (q) { $('sugs').appendChild(h('button', { class: 'sug', type: 'button', onclick: function () { ask(q); } }, q)); });
+    $('chatForm').addEventListener('submit', function (e) { e.preventDefault(); var v = $('chatInput').value; $('chatInput').value = ''; ask(v); });
+  }
+
+  /* ---------- generic panel dialog ---------- */
+  var panel = $('panelDlg');
+  function openPanel(title, sub, nodes) {
+    $('panelTitle').textContent = title;
+    $('panelSub').textContent = sub || '';
+    $('panelSub').hidden = !sub;
+    var b = $('panelBody');
+    b.textContent = '';
+    nodes.forEach(function (n) { b.appendChild(n); });
+    if (!panel.open) { if (typeof panel.showModal === 'function') panel.showModal(); else panel.setAttribute('open', ''); }
+    var first = b.querySelector('input');
+    if (first) setTimeout(function () { first.focus(); }, 30);
+  }
+  $('panelClose').addEventListener('click', function () { panel.close(); });
+  panel.addEventListener('click', function (e) { if (e.target === panel) panel.close(); });
+
+  function openSettings() {
+    var dark = effectiveTheme() === 'dark';
+    var confirmStep = false;
+    var wipe = h('button', { class: 'btn btn-ghost', type: 'button', disabled: isDemo() || !state.personal.length ? true : null }, 'Барлық жазбаларды өшіру');
+    wipe.addEventListener('click', function () {
+      if (!confirmStep) { confirmStep = true; wipe.className = 'btn btn-danger'; wipe.textContent = 'Иә, бәрін өшіру'; return; }
+      state.personal = []; state.goal = null; state.flags = {};
+      try { localStorage.removeItem(KEY); localStorage.removeItem(GOAL_KEY); localStorage.removeItem(FLAGS_KEY); } catch (e) {}
+      panel.close(); render(); toast('Барлық жазбалар өшірілді');
+    });
+    openPanel('Параметрлер', '', [
+      h('div', { class: 'field' }, h('span', { class: 'lbl' }, 'Тақырып'),
+        h('div', { class: 'seg' },
+          h('button', { type: 'button', class: dark ? null : 'is-on', onclick: function () { setTheme('light'); openSettings(); } }, 'Күндізгі'),
+          h('button', { type: 'button', class: dark ? 'is-on' : null, onclick: function () { setTheme('dark'); openSettings(); } }, 'Түнгі'))),
+      h('div', { class: 'field' }, h('span', { class: 'lbl' }, 'Деректер'),
+        h('p', { class: 'dlg-note' }, 'Жазбалар тек осы құрылғының браузерінде сақталады. Қазір сақталғаны: ' + state.personal.length + ' жазба.'),
+        wipe, isDemo() ? h('p', { class: 'muted', style: 'font-size:13px' }, 'Мысал режимінде өшіру қолжетімсіз.') : null)
+    ]);
+  }
+  function openHelp() {
+    var faq = [
+      ['Деректерім қайда сақталады?', 'Тек осы құрылғының браузерінде. Сайт оларды ешқайда жібермейді. Басқа телефоннан не компьютерден ашсаңыз, жазбалар көрінбейді.'],
+      ['Жазбаны қалай қосамын?', '«Жазба қосу» батырмасын басып, соманы, отбасы мүшесін және санатты таңдаңыз. Күні мен уақыты өзі қойылады.'],
+      ['Қате жазбаны қалай өшіремін?', 'Операциялар тарихында жазбаның оң жағындағы қоқыс жәшігі белгісін басып, жоюды растаңыз.'],
+      ['Мысал режимі деген не?', 'Сайттың мүмкіндіктерін көрсетуге арналған үлгі отбасының бюджеті. Ондағы өзгерістер сіздің жазбаларыңызға әсер етпейді.'],
+      ['Айдың басында сомалар неге нөлге түседі?', 'Кіріс, шығыс және қалдық ағымдағы ай бойынша есептеледі. Өткен айлардың жазбалары тарихта сақтаулы.']
+    ];
+    openPanel('Көмек орталығы', 'Жиі қойылатын сұрақтар', [h('div', { class: 'faq' }, faq.map(function (f, i) { return h('details', i === 0 ? { open: true } : null, h('summary', null, f[0]), h('p', null, f[1])); }))]);
+  }
+
+  /* ---------- entry form ---------- */
   var form = $('form');
   function currentType() { return $('tIncome').checked ? 'income' : 'expense'; }
   function syncType() {
@@ -1189,178 +1996,186 @@ svg { flex: none; }
   }
   $('tIncome').addEventListener('change', syncType);
   $('tExpense').addEventListener('change', syncType);
-
-  $('amount').addEventListener('input', function () {
-    var digits = this.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10);
-    this.value = digits ? fmtNum(+digits) : '';
-    clearErr('amount');
-  });
+  $('amount').addEventListener('input', function () { var d = this.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10); this.value = d ? fmtNum(+d) : ''; clearErr('amount'); });
   $('member').addEventListener('input', function () { clearErr('member'); renderNameChips(); });
   [].forEach.call(document.querySelectorAll('input[name="cat"]'), function (el) { el.addEventListener('change', function () { clearErr('cat'); }); });
-
-  function showErr(field, msg) {
-    var e = $(field + 'Err');
-    e.textContent = msg; e.hidden = false;
-    var input = field === 'cat' ? null : $(field);
-    if (input) input.setAttribute('aria-invalid', 'true');
-  }
-  function clearErr(field) {
-    var e = $(field + 'Err');
-    if (e) { e.hidden = true; e.textContent = ''; }
-    var input = field === 'cat' ? null : $(field);
-    if (input) input.removeAttribute('aria-invalid');
-  }
+  function showErr(field, msg) { var e = $(field + 'Err'); e.textContent = msg; e.hidden = false; if (field !== 'cat') $(field).setAttribute('aria-invalid', 'true'); }
+  function clearErr(field) { var e = $(field + 'Err'); if (e) { e.hidden = true; e.textContent = ''; } if (field !== 'cat') $(field).removeAttribute('aria-invalid'); }
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
-    var type = currentType();
-    var amount = parseInt($('amount').value.replace(/\D/g, ''), 10) || 0;
-    var member = normalizeName($('member').value);
+    var type = currentType(), amount = digits($('amount').value), member = normalizeName($('member').value);
     var catEl = document.querySelector('input[name="cat"]:checked');
     var category = type === 'expense' ? (catEl ? catEl.value : '') : null;
-    var firstBad = null;
-
-    if (amount <= 0) { showErr('amount', 'Соманы жазыңыз: ол 0-ден үлкен болуы керек'); firstBad = firstBad || $('amount'); }
-    else if (amount > MAX_AMOUNT) { showErr('amount', 'Сома тым үлкен. 100 000 000 ₸-ге дейін жазыңыз'); firstBad = firstBad || $('amount'); }
-    if (!member) { showErr('member', 'Кім екенін жазыңыз, мысалы: Айгүл'); firstBad = firstBad || $('member'); }
-    if (type === 'expense' && !category) { showErr('cat', 'Санатты таңдаңыз'); firstBad = firstBad || $('cFood'); }
-    if (firstBad) { firstBad.focus(); return; }
-
-    var rec = {
-      id: uid(), type: type, amount: amount, member: member,
-      note: $('note').value.trim().replace(/\s+/g, ' ').slice(0, 60),
-      category: category, createdAt: new Date().toISOString()
-    };
+    var bad = null;
+    if (amount <= 0) { showErr('amount', 'Соманы жазыңыз: ол 0-ден үлкен болуы керек'); bad = bad || $('amount'); }
+    else if (amount > MAX_AMOUNT) { showErr('amount', 'Сома тым үлкен. 100 000 000 ₸-ге дейін жазыңыз'); bad = bad || $('amount'); }
+    if (!member) { showErr('member', 'Кім екенін жазыңыз, мысалы: Айгүл'); bad = bad || $('member'); }
+    if (type === 'expense' && !category) { showErr('cat', 'Санатты таңдаңыз'); bad = bad || $('cFood'); }
+    if (bad) { bad.focus(); return; }
+    var rec = { id: uid(), type: type, amount: amount, member: member, note: $('note').value.trim().replace(/\s+/g, ' ').slice(0, 60), category: category, createdAt: new Date().toISOString() };
     records().push(rec);
     state.flashId = rec.id;
-    state.histLimit = Math.max(state.histLimit, HIST_PAGE);
     $('member').value = member;
     commit();
-
-    $('amount').value = '';
-    $('note').value = '';
+    $('amount').value = ''; $('note').value = '';
     if (catEl) catEl.checked = false;
     renderNameChips();
     toast((type === 'income' ? 'Кіріс қосылды: +' : 'Шығыс қосылды: −') + fmtNum(amount) + NB + '₸');
-    if (isPhone()) closeSheet(); else $('amount').focus();
+    closeEntry();
   });
 
   /* ---------- delete ---------- */
   var dlg = $('delDlg');
   function askDelete(r) {
     state.pendingDelete = r.id;
-    var isInc = r.type === 'income';
-    var title = r.note || (isInc ? 'Кіріс' : CATS[r.category].name);
-    var rec = $('delRec');
+    var isInc = r.type === 'income', title = r.note || (isInc ? 'Кіріс' : CATS[r.category].name), rec = $('delRec');
     rec.textContent = '';
     rec.appendChild(h('span', { class: 't' }, title));
     rec.appendChild(h('span', { class: 'a' }, (isInc ? '+' : '−') + fmtNum(r.amount) + NB + '₸'));
     rec.appendChild(h('span', { class: 'm' }, (isInc ? 'Кіріс' : CATS[r.category].name) + ' · ' + r.member + ' · ' + whenLabel(new Date(r.createdAt))));
-    if (typeof dlg.showModal === 'function') {
-      dlg.returnValue = '';
-      dlg.showModal();
-    } else {
-      dlg.setAttribute('open', '');
-    }
+    dlg.returnValue = '';
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
   }
   dlg.addEventListener('close', function () {
-    var id = state.pendingDelete;
-    state.pendingDelete = null;
+    var id = state.pendingDelete; state.pendingDelete = null;
     if (dlg.returnValue !== 'ok' || !id) return;
-    var list = records();
-    var idx = list.findIndex(function (r) { return r.id === id; });
+    var list = records(), idx = list.findIndex(function (r) { return r.id === id; });
     if (idx < 0) return;
-    list.splice(idx, 1);
-    commit();
-    toast('Жазба жойылды');
+    list.splice(idx, 1); commit(); toast('Жазба жойылды');
   });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close('cancel'); });
 
-  /* ---------- demo mode ---------- */
+  /* ---------- demo ---------- */
+  function resetForm() { $('member').value = ''; clearErr('amount'); clearErr('member'); clearErr('cat'); }
   function enterDemo() {
-    state.mode = 'demo';
-    state.demo = buildDemo();
-    state.histLimit = HIST_PAGE;
-    state.activeCat = null;
-    $('member').value = '';
-    clearErr('amount'); clearErr('member'); clearErr('cat');
-    render();
+    state.mode = 'demo'; state.demo = buildDemo(); state.demoGoal = { name: 'Үй алу', target: 3000000 }; state.demoFlags = { read: true };
+    state.histLimit = HIST_PAGE; state.activeCat = null; state.editingGoal = false;
+    resetForm(); closeMenu(); setQuery(''); render();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     toast('Мысал ашылды');
   }
   function exitDemo() {
-    state.mode = 'personal';
-    state.demo = [];
-    state.personal = readStore();
-    state.histLimit = HIST_PAGE;
-    state.activeCat = null;
-    $('member').value = '';
-    clearErr('amount'); clearErr('member'); clearErr('cat');
-    render();
+    state.mode = 'personal'; state.demo = []; state.personal = readStore(); state.goal = readGoal(); state.flags = readFlags();
+    state.histLimit = HIST_PAGE; state.activeCat = null; state.editingGoal = false;
+    resetForm(); setQuery(''); render();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     toast('Өз бюджетіңізге оралдыңыз');
   }
-  $('demoBtn').addEventListener('click', enterDemo);
   $('exitDemoBtn').addEventListener('click', exitDemo);
   $('moreBtn').addEventListener('click', function () { state.histLimit += HIST_PAGE; renderHistory(); });
 
-  /* ---------- phone sheet ---------- */
-  var mq = window.matchMedia('(max-width: 959px)');
-  function isPhone() { return mq.matches; }
-  var inertTargets = ['top', 'demoBanner', 'period', 'mbar', 'kpis', 'content'];
-  function setInert(on) {
-    inertTargets.forEach(function (id) { var el = $(id); if (!el) return; if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); });
+  /* ---------- search ---------- */
+  function setQuery(q) {
+    state.query = q;
+    if ($('searchTop').value !== q) $('searchTop').value = q;
+    if ($('searchHist').value !== q) $('searchHist').value = q;
+    state.histLimit = HIST_PAGE;
+    renderHistory();
   }
-  function openSheet() {
-    $('entry').classList.add('open');
-    $('scrim').classList.add('open');
-    document.documentElement.classList.add('lock');
-    setInert(true);
+  var searchTimer = null;
+  $('searchTop').addEventListener('input', function () { var v = this.value; setQuery(v); clearTimeout(searchTimer); if (v.trim()) searchTimer = setTimeout(function () { goTo('histCard'); }, 600); });
+  $('searchTop').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); goTo('histCard'); } });
+  $('searchHist').addEventListener('input', function () { setQuery(this.value); });
+  $('clearSearch').addEventListener('click', function () { setQuery(''); });
+
+  /* ---------- drawers: entry form and menu ---------- */
+  var openName = null;
+  var deskMq = window.matchMedia('(min-width: 1280px)');
+  function setInert(on, except) {
+    ['topbar', 'top', 'sidebar'].forEach(function (id) { var el = $(id); if (!el || id === except) return; if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); });
+  }
+  function openEntry() {
+    closeMenu();
+    $('entry').classList.add('open'); $('scrim').classList.add('open', 'over-entry');
+    document.documentElement.classList.add('lock'); setInert(true); openName = 'entry';
     setTimeout(function () { $('amount').focus({ preventScroll: true }); }, 60);
   }
-  function closeSheet() {
-    if (!$('entry').classList.contains('open')) return;
-    $('entry').classList.remove('open');
-    $('scrim').classList.remove('open');
-    document.documentElement.classList.remove('lock');
-    setInert(false);
-    $('openSheetBtn').focus({ preventScroll: true });
+  function closeEntry() {
+    if (openName !== 'entry') return;
+    $('entry').classList.remove('open'); $('scrim').classList.remove('open', 'over-entry');
+    document.documentElement.classList.remove('lock'); setInert(false); openName = null;
   }
-  $('openSheetBtn').addEventListener('click', openSheet);
-  $('closeSheetBtn').addEventListener('click', closeSheet);
-  $('scrim').addEventListener('click', closeSheet);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isPhone()) closeSheet(); });
-  var onMq = function () { if (!isPhone()) closeSheet(); };
-  if (mq.addEventListener) mq.addEventListener('change', onMq); else if (mq.addListener) mq.addListener(onMq);
+  function openMenu() {
+    if (deskMq.matches) return;
+    $('sidebar').classList.add('open'); $('scrim').classList.add('open');
+    document.documentElement.classList.add('lock'); setInert(true, 'sidebar'); openName = 'menu';
+    setTimeout(function () { var a = $('sidebar').querySelector('.nav-item'); if (a) a.focus({ preventScroll: true }); }, 60);
+  }
+  function closeMenu() {
+    if (openName !== 'menu') return;
+    $('sidebar').classList.remove('open'); $('scrim').classList.remove('open');
+    document.documentElement.classList.remove('lock'); setInert(false); openName = null;
+  }
+  $('menuBtn').addEventListener('click', openMenu);
+  $('closeMenuBtn').addEventListener('click', closeMenu);
+  $('closeSheetBtn').addEventListener('click', closeEntry);
+  $('scrim').addEventListener('click', function () { closeEntry(); closeMenu(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeEntry(); closeMenu(); closeBell(); } });
+  var onDesk = function () { if (deskMq.matches) closeMenu(); };
+  if (deskMq.addEventListener) deskMq.addEventListener('change', onDesk); else if (deskMq.addListener) deskMq.addListener(onDesk);
 
-  /* ---------- icons in static markup ---------- */
-  [].forEach.call(document.querySelectorAll('[data-icon]'), function (el) { el.innerHTML = icon(ICON_PATHS[el.dataset.icon], 18); });
+  function goTo(id) {
+    closeMenu();
+    if (id === 'top') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    var el = $(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  document.addEventListener('click', function (e) {
+    var tool = e.target.closest('[data-tool]');
+    if (tool) { openTool(tool.dataset.tool); return; }
+    var g = e.target.closest('[data-goto]');
+    if (g) { e.preventDefault(); goTo(g.dataset.goto); return; }
+    var a = e.target.closest('[data-action]');
+    if (!a) return;
+    var act = a.dataset.action;
+    if (act === 'add') openEntry();
+    else if (act === 'demo') enterDemo();
+    else if (act === 'settings') { closeMenu(); openSettings(); }
+    else if (act === 'help') { closeMenu(); openHelp(); }
+  });
+  $('familyBtn').addEventListener('click', openSettings);
+
+  /* ---------- scroll spy for the sidebar ---------- */
+  var spyIds = ['histCard', 'toolsCard', 'safeCard', 'achCard', 'infoCard'];
+  function spy() {
+    var cur = 'top';
+    spyIds.forEach(function (id) { var el = $(id); if (el && el.getBoundingClientRect().top < 160) cur = id; });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      var vis = spyIds.filter(function (id) { var r = $(id).getBoundingClientRect(); return r.top < window.innerHeight && r.bottom > 0; });
+      if (vis.length) cur = vis[vis.length - 1];
+    }
+    [].forEach.call(document.querySelectorAll('.nav-item[data-spy]'), function (b) { b.classList.toggle('is-active', b.dataset.spy === cur); });
+  }
+  var spyRaf = null;
+  window.addEventListener('scroll', function () { if (spyRaf) return; spyRaf = requestAnimationFrame(function () { spyRaf = null; spy(); }); }, { passive: true });
+
+  /* ---------- bell ---------- */
+  function closeBell() { $('bellPop').hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); }
+  $('bellBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = $('bellPop').hidden;
+    $('bellPop').hidden = !open; $('bellBtn').setAttribute('aria-expanded', String(open));
+    if (open) $('bellDot').hidden = true;
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.bell-wrap')) closeBell(); });
 
   /* ---------- theme ---------- */
   var root = document.documentElement;
   function effectiveTheme() { return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
-  function paintThemeBtn() {
+  function paintTheme() {
     var dark = effectiveTheme() === 'dark';
-    var b = $('themeBtn');
-    b.querySelector('.i-moon').hidden = dark;
-    b.querySelector('.i-sun').hidden = !dark;
-    var label = dark ? 'Күндізгі режим' : 'Түнгі режим';
-    b.setAttribute('aria-label', label); b.title = label;
+    $('themeSwitch').setAttribute('aria-checked', String(dark));
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', dark ? '#0c110e' : '#f2f5f3');
+    if (meta) meta.setAttribute('content', dark ? '#0c110e' : '#f2f6f3');
   }
-  $('themeBtn').addEventListener('click', function () {
-    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-    paintThemeBtn();
-  });
+  function setTheme(t) { root.setAttribute('data-theme', t); try { localStorage.setItem(THEME_KEY, t); } catch (e) {} paintTheme(); }
+  $('themeSwitch').addEventListener('click', function () { setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark'); });
 
   /* ---------- toast ---------- */
   var toastTimer = null;
   function toast(msg) {
     var t = $('toast');
-    t.innerHTML = icon(ICON_PATHS.check, 18);
+    t.innerHTML = icon('check', 18);
     t.appendChild(document.createTextNode(msg));
     t.classList.add('show');
     clearTimeout(toastTimer);
@@ -1369,23 +2184,26 @@ svg { flex: none; }
 
   /* ---------- keep in sync ---------- */
   window.addEventListener('storage', function (e) {
-    if (e.key !== KEY) return;
-    state.personal = readStore();
-    if (state.mode === 'personal') render();
+    if (e.key !== KEY && e.key !== GOAL_KEY && e.key !== FLAGS_KEY) return;
+    state.personal = readStore(); state.goal = readGoal(); state.flags = readFlags();
+    if (!isDemo()) render();
   });
   var lastMonth = monthKey(new Date()), lastDay = new Date().getDate();
-  function tick() {
-    var n = new Date();
-    if (monthKey(n) !== lastMonth || n.getDate() !== lastDay) { lastMonth = monthKey(n); lastDay = n.getDate(); render(); }
-  }
+  function tick() { var n = new Date(); if (monthKey(n) !== lastMonth || n.getDate() !== lastDay) { lastMonth = monthKey(n); lastDay = n.getDate(); render(); } }
   setInterval(tick, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
 
   /* ---------- boot ---------- */
+  fillIcons();
+  renderTools();
+  renderTip();
+  renderArticle();
+  initChat();
   $('storageWarn').hidden = storageOk;
-  paintThemeBtn();
+  paintTheme();
   syncType();
   render();
+  spy();
 })();
 </script>
 </body>
