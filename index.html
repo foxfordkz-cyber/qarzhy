@@ -406,7 +406,8 @@ svg { flex: none; }
 
 /* ---------- tools ---------- */
 .tools { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1; align-content: stretch; }
-@media (min-width: 900px) { .tools { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .tools { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 899px) { .tools { grid-template-columns: repeat(6, minmax(0, 1fr)); } .tool { grid-column: span 2; } .tool:nth-child(n+4) { grid-column: span 3; } }
 .tool {
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 18px 8px 16px; border: 0; border-radius: 16px;
   background: var(--surface-2); cursor: pointer; text-align: center; font-size: 13px; font-weight: 500; line-height: 1.3; color: var(--ink);
@@ -1635,8 +1636,7 @@ svg { flex: none; }
     { id: 'goal', name: 'Мақсатқа жету есебі', icon: 'target' },
     { id: 'buy', name: 'Сатып алу шешімі', icon: 'cart' },
     { id: 'loan', name: 'Несие калькуляторы', icon: 'percent' },
-    { id: 'fraud', name: 'Алаяқтықты анықтау', icon: 'shield' },
-    { id: 'tax', name: 'Салық есептегіші', icon: 'calc', soon: true }
+    { id: 'fraud', name: 'Алаяқтықты анықтау', icon: 'shield' }
   ];
   function renderTools() {
     var box = $('tools');
