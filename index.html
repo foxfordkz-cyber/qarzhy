@@ -61,6 +61,7 @@
       </div>
       <ul class="nav">
         <li><button class="nav-item is-active" type="button" data-goto="top" data-spy="top"><span data-icon="home" data-size="20"></span>Басты бет</button></li>
+        <li><button class="nav-item" type="button" data-goto="trendCard" data-spy="trendCard"><span data-icon="trend" data-size="20"></span>Айлық динамика</button></li>
         <li><button class="nav-item" type="button" data-goto="histCard" data-spy="histCard"><span data-icon="wallet" data-size="20"></span>Менің қаржым</button></li>
         <li><button class="nav-item" type="button" data-goto="toolsCard" data-spy="toolsCard"><span data-icon="calc" data-size="20"></span>Қаржы құралдары</button></li>
         <li><button class="nav-item" type="button" data-goto="safeCard" data-spy="safeCard"><span data-icon="shield" data-size="20"></span>Қауіпсіздік</button></li>
@@ -70,6 +71,7 @@
       <div class="nav-sep"></div>
       <ul class="nav">
         <li><button class="nav-item" type="button" data-action="settings"><span data-icon="gear" data-size="20"></span>Параметрлер</button></li>
+        <li><button class="nav-item" type="button" data-action="tour"><span data-icon="play" data-size="20"></span>Сайтпен танысу</button></li>
         <li><button class="nav-item" type="button" data-action="help"><span data-icon="help" data-size="20"></span>Көмек орталығы</button></li>
         <li><button class="nav-item" type="button" id="themeSwitch" role="switch" aria-checked="false"><span data-icon="moon" data-size="20"></span>Түнгі режим<span class="switch" aria-hidden="true"></span></button></li>
       </ul>
@@ -112,7 +114,10 @@
             <span class="db-sub">Бұл үлгі отбасының бюджеті. Сіздің жазбаларыңыз өзгеріссіз сақтаулы.</span>
           </div>
         </div>
-        <button class="btn btn-primary" id="exitDemoBtn" type="button">Өз бюджетіме оралу</button>
+        <div class="db-actions">
+          <button class="btn btn-tour" type="button" data-action="tour" aria-label="Сайтпен танысу турын бастау"><span data-icon="play" data-size="16"></span><span class="db-tour-text">Турды бастау</span></button>
+          <button class="btn btn-primary" id="exitDemoBtn" type="button">Өз бюджетіме оралу</button>
+        </div>
       </div>
 
       <div class="mbar" id="mbar">
@@ -132,6 +137,7 @@
             <div class="hero-actions">
               <button class="btn btn-primary btn-lg" data-action="add" type="button">Жазба қосу<span data-icon="arrow" data-size="18"></span></button>
               <button class="link" data-action="demo" type="button" id="heroDemo"><span data-icon="eye" data-size="16"></span>Мысалды көру</button>
+              <button class="link" data-action="tour" type="button"><span data-icon="play" data-size="16"></span>Сайтпен танысу</button>
             </div>
           </div>
           <div class="hero-art" aria-hidden="true">
@@ -187,7 +193,12 @@
           <div class="card-head">
             <div>
               <h2 class="card-title" id="statusTitle">Біздің қаржылық жағдайымыз</h2>
-              <p class="card-sub" id="statusSub">Қараша 2026</p>
+              <div class="mnav" role="group" aria-label="Айды таңдау">
+                <button class="mnav-btn" id="mPrev" type="button" aria-label="Алдыңғы ай"><span data-icon="chevL" data-size="16"></span></button>
+                <span class="mnav-label" id="statusSub" aria-live="polite">Қараша 2026</span>
+                <button class="mnav-btn" id="mNext" type="button" aria-label="Келесі ай"><span data-icon="chevR" data-size="16"></span></button>
+                <button class="link mnav-now" id="mNow" type="button" hidden>Осы ай</button>
+              </div>
             </div>
             <button class="link" type="button" data-goto="histCard">Толығырақ<span data-icon="arrow" data-size="14"></span></button>
           </div>
@@ -229,7 +240,10 @@
         </section>
 
         <section class="card c-cal" id="calCard" aria-labelledby="calTitle">
-          <div class="card-head"><h2 class="card-title" id="calTitle">Күнтізбе және ескертпелер</h2></div>
+          <div class="card-head">
+            <h2 class="card-title" id="calTitle">Күнтізбе және ескертпелер</h2>
+            <button class="link" type="button" data-action="add-reminder"><span data-icon="plus" data-size="14"></span>Қосу</button>
+          </div>
           <ul class="rem" id="reminders"></ul>
         </section>
 
@@ -239,6 +253,7 @@
               <h2 class="card-title" id="catTitle">Ақша қайда кетті?</h2>
               <p class="card-sub" id="catSub">Санаттар бойынша шығыс</p>
             </div>
+            <button class="link" type="button" data-action="limits"><span data-icon="gauge" data-size="14"></span>Лимиттер</button>
           </div>
           <div class="donut-wrap">
             <div class="donut" id="donut">
@@ -255,6 +270,7 @@
             </div>
             <ul class="legend" id="legend"></ul>
           </div>
+          <div class="hint is-warn" id="limitHint" hidden><span data-icon="gauge" data-size="18"></span><span id="limitHintText"></span></div>
           <div class="card-foot"><button class="btn btn-soft btn-block" type="button" data-goto="histCard">Толығырақ көру<span data-icon="arrow" data-size="16"></span></button></div>
         </section>
 
@@ -273,23 +289,16 @@
           <div id="goalBox" class="fill"></div>
         </section>
 
-        <section class="card c-hist" id="histCard" aria-labelledby="histTitle">
+        <section class="card c-trend" id="trendCard" aria-labelledby="trendTitle">
           <div class="card-head">
             <div>
-              <h2 class="card-title" id="histTitle">Операциялар тарихы</h2>
-              <p class="card-sub">Жаңа жазбалар жоғарыда</p>
+              <h2 class="card-title" id="trendTitle">Айлық динамика</h2>
+              <p class="card-sub">Соңғы 6 ай · айды басып, толық есебін көріңіз</p>
             </div>
-            <span class="count-pill" id="histCount" aria-label="Жазбалар саны">0</span>
+            <div class="trend-legend" aria-hidden="true"><span><i class="sw-inc"></i>Кіріс</span><span><i class="sw-exp"></i>Шығыс</span></div>
           </div>
-          <div class="hist-tools">
-            <label class="hist-search">
-              <span class="ico" data-icon="search" data-size="16"></span>
-              <input id="searchHist" type="search" placeholder="Жазбалардан іздеу..." autocomplete="off" aria-label="Жазбалардан іздеу">
-            </label>
-            <span class="filter-pill" id="filterPill" hidden><span id="filterText"></span><button type="button" id="clearSearch" aria-label="Іздеуді тазалау"><span data-icon="x" data-size="14"></span></button></span>
-          </div>
-          <div class="hist-scroll"><div id="history"></div></div>
-          <button class="btn btn-ghost btn-block more" id="moreBtn" type="button" hidden>Тағы көрсету</button>
+          <div class="trend" id="trend"></div>
+          <div class="trend-sum" id="trendSum"></div>
         </section>
 
         <section class="card c-scen" id="scenCard" aria-labelledby="scenTitle">
@@ -317,6 +326,30 @@
               </svg>
             </div>
           </div>
+        </section>
+
+        <section class="card c-hist" id="histCard" aria-labelledby="histTitle">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title" id="histTitle">Операциялар тарихы</h2>
+              <p class="card-sub">Өзгерту үшін жазбаны басыңыз</p>
+            </div>
+            <span class="count-pill" id="histCount" aria-label="Жазбалар саны">0</span>
+          </div>
+          <div class="chips hist-type" id="histType" role="group" aria-label="Жазба түрі бойынша сүзу">
+            <button class="chip is-on" type="button" data-htype="all" aria-pressed="true">Барлығы</button>
+            <button class="chip" type="button" data-htype="income" aria-pressed="false">Кіріс</button>
+            <button class="chip" type="button" data-htype="expense" aria-pressed="false">Шығыс</button>
+          </div>
+          <div class="hist-tools">
+            <label class="hist-search">
+              <span class="ico" data-icon="search" data-size="16"></span>
+              <input id="searchHist" type="search" placeholder="Жазбалардан іздеу..." autocomplete="off" aria-label="Жазбалардан іздеу">
+            </label>
+            <span class="filter-pill" id="filterPill" hidden><span id="filterText"></span><button type="button" id="clearSearch" aria-label="Іздеуді тазалау"><span data-icon="x" data-size="14"></span></button></span>
+          </div>
+          <div class="hist-scroll"><div id="history"></div></div>
+          <button class="btn btn-ghost btn-block more" id="moreBtn" type="button" hidden>Тағы көрсету</button>
         </section>
 
         <section class="card c-safe" id="safeCard" aria-labelledby="safeHead">
@@ -375,7 +408,7 @@
   <form class="form" id="form" novalidate>
     <div class="sheet-grip" aria-hidden="true"></div>
     <div class="form-head">
-      <h2>Жаңа жазба</h2>
+      <h2 id="formTitle">Жаңа жазба</h2>
       <button class="icon-btn" id="closeSheetBtn" type="button" aria-label="Жабу"><span data-icon="x" data-size="20"></span></button>
     </div>
     <div class="seg" role="radiogroup" aria-label="Жазба түрі">
@@ -412,12 +445,19 @@
       </div>
       <p class="err" id="catErr" hidden></p>
     </fieldset>
-    <div class="field">
-      <label for="note">Сипаттама <span class="opt">· міндетті емес</span></label>
-      <input class="input" id="note" name="note" autocomplete="off" maxlength="60" placeholder="Мысалы, апталық азық-түлік">
+    <div class="grid2 form-row">
+      <div class="field">
+        <label for="note">Сипаттама <span class="opt">· міндетті емес</span></label>
+        <input class="input" id="note" name="note" autocomplete="off" maxlength="60" placeholder="Мысалы, апталық азық-түлік">
+      </div>
+      <div class="field">
+        <label for="date">Күні</label>
+        <input class="input" id="date" name="date" type="date" aria-describedby="dateErr">
+        <p class="err" id="dateErr" hidden></p>
+      </div>
     </div>
     <button class="btn btn-primary btn-lg btn-block" id="submitBtn" type="submit">Шығысты қосу</button>
-    <p class="form-hint">Күні мен уақыты автоматты түрде қойылады</p>
+    <p class="form-hint" id="formHint">Уақыты автоматты түрде қойылады. Өткен күнді де таңдауға болады.</p>
   </form>
 </aside>
 
@@ -442,6 +482,21 @@
     <div id="panelBody" style="display:flex;flex-direction:column;gap:14px"></div>
   </div>
 </dialog>
+
+<div class="tour" id="tour" hidden>
+  <div class="tour-hole" id="tourHole"></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="false" aria-labelledby="tourTitle">
+    <div class="tour-top"><span class="tour-step" id="tourStep"></span><button class="icon-btn" type="button" id="tourClose" aria-label="Турды жабу"><span data-icon="x" data-size="18"></span></button></div>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="tour-actions">
+      <button class="btn btn-ghost" type="button" id="tourPrev">Артқа</button>
+      <button class="btn btn-primary" type="button" id="tourNext">Келесі</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".json,application/json" hidden>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
