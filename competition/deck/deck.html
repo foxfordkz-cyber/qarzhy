@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Отбасы бюджеті — питч</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Onest:wght@500;600;700&display=swap">
+<style>
+:root { --bg: #f2f6f3; --surface: #fff; --ink: #0f1a14; --ink-2: #46524b; --ink-3: #69746d; --accent: #17855a; --accent-soft: #e3f2ea; --accent-ink: #0f5f40; --line: #e3eae5; --warn: #8a5a00; --warn-soft: #fdf3dc;
+  --c-food: #eb6834; --c-transport: #1497b8; --c-home: #6250d6; --c-other: #c2458a; }
+@page { size: 1280px 720px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #ccc; }
+body { font: 400 20px/1.45 "Golos Text", system-ui, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.s { width: 1280px; height: 720px; padding: 56px 72px 80px; background: var(--bg); position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; }
+.s:last-child { page-break-after: auto; }
+h1, h2, h3 { font-family: Onest, "Golos Text", sans-serif; margin: 0; letter-spacing: -0.02em; }
+h1 { font-size: 64px; line-height: 1.05; font-weight: 700; }
+h2 { font-size: 40px; line-height: 1.15; font-weight: 600; margin-bottom: 28px; }
+h3 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+p { margin: 0; }
+.eyebrow { font-size: 15px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 14px; }
+.num { position: absolute; right: 72px; bottom: 32px; font-size: 14px; color: var(--ink-3); }
+.brand { position: absolute; left: 72px; bottom: 30px; display: flex; align-items: center; gap: 10px; font: 600 15px Onest, sans-serif; color: var(--ink-2); }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.card { background: var(--surface); border-radius: 20px; padding: 26px 28px; box-shadow: 0 2px 10px rgba(15, 40, 27, .06); }
+.card p { color: var(--ink-2); font-size: 18px; }
+.big { font: 700 56px/1 Onest, sans-serif; letter-spacing: -0.03em; color: var(--accent-ink); }
+.muted { color: var(--ink-3); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; font-size: 16px; }
+.shot { border-radius: 16px; box-shadow: 0 12px 40px rgba(15, 40, 27, .16); display: block; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 16px; background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(15, 40, 27, .06); }
+th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 14px Onest, sans-serif; color: var(--ink-3); background: #f7faf8; }
+tr:last-child td { border-bottom: 0; }
+td.us { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.flow { display: flex; align-items: stretch; gap: 14px; }
+.flow .card { flex: 1; padding: 22px; }
+.arrow { align-self: center; font-size: 30px; color: var(--accent); }
+.note { font-size: 14px; color: var(--ink-3); margin-top: auto; padding-top: 14px; }
+.todo { background: var(--warn-soft); color: var(--warn); border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 500; }
+ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
+.bubble { background: var(--surface); border-radius: 18px 18px 18px 4px; padding: 18px 22px; font: 500 24px/1.35 "Golos Text", sans-serif; box-shadow: 0 2px 10px rgba(15, 40, 27, .06); }
+.field { display: grid; grid-template-columns: 150px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 19px; }
+.field b { font-weight: 600; }
+.tag { display: inline-flex; align-items: center; gap: 8px; } .tag i { width: 11px; height: 11px; border-radius: 50%; background: var(--c-food); }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="s" style="background: linear-gradient(120deg, #e2f3e9, #f3faf6 60%, #e2f3e9); justify-content: center;">
+  <div class="eyebrow">StartUp Battle — IT FEST 2026 · Студенттер</div>
+  <h1>Отбасы бюджеті</h1>
+  <p style="font-size: 30px; margin-top: 18px; max-width: 680px; color: var(--ink-2);">Шығысты бір сөйлеммен айтыңыз — жасанды интеллект өзі жазып, ақша қайда кеткенін көрсетеді.</p>
+  <p style="margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap;"><span class="pill">ИИ-ввод на казахском</span><span class="pill">Работает офлайн</span><span class="pill">foxfordkz-cyber.github.io/qarzhy</span></p>
+  <p style="margin-top: 40px; max-width: 640px;" class="todo">[Команда: ФИО, вуз, курс — впишите]</p>
+  <img src="deck-phone.jpg" style="position: absolute; right: 90px; top: 70px; height: 580px;" class="shot" alt="">
+</section>
+
+<!-- 2 -->
+<section class="s">
+  <div class="eyebrow">Проблема</div>
+  <h2>Семья не знает, куда уходят деньги — и бросает учёт через 2 недели</h2>
+  <div class="grid3">
+    <div class="card"><h3>Нет общей картины</h3><p>Тратят двое и больше, наличными и с разных карт. Остаток месяца становится ясен только когда денег уже нет.</p></div>
+    <div class="card"><h3>Банк видит не всё</h3><p>Аналитика Kaspi и Halyk показывает только операции своей карты: без наличных, других банков и без «кто сколько потратил».</p></div>
+    <div class="card"><h3>Ручной учёт долгий</h3><p>5 полей на каждую трату — 20–30 секунд на телефоне. Таблицы и тетради быстро забрасывают. На казахском почти ничего нет.</p></div>
+  </div>
+  <p class="todo" style="margin-top: 24px;">[Команда: добавьте 1–2 цитаты из интервью с семьями — жюри оценивает подтверждение проблемы]</p>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">2</div>
+</section>
+
+<!-- 3 -->
+<section class="s">
+  <div class="eyebrow">Решение</div>
+  <h2>Одна фраза вместо пяти полей</h2>
+  <div class="grid2" style="align-items: center;">
+    <div>
+      <div class="bubble">«Айгүл Магнумнан 12 500-ге азық-түлік алды» 🎤</div>
+      <div class="arrow" style="margin: 14px 0 14px 30px;">↓ ИИ</div>
+      <div class="card" style="padding: 12px 26px;">
+        <div class="field"><span class="muted">Тип</span><b>Шығыс</b></div>
+        <div class="field"><span class="muted">Сома</span><b>12 500 ₸</b></div>
+        <div class="field"><span class="muted">Кім</span><b>Айгүл</b></div>
+        <div class="field"><span class="muted">Санат</span><b class="tag"><i></i>Азық-түлік</b></div>
+        <div class="field" style="border: 0;"><span class="muted">Сипаттама</span><b>Магнумнан азық-түлік</b></div>
+      </div>
+    </div>
+    <div>
+      <ul style="font-size: 21px;">
+        <li>Текстом или голосом, на казахском и русском</li>
+        <li>Человек проверяет и нажимает «Сақтау» — ИИ сам ничего не сохраняет</li>
+        <li>Сразу видно: остаток месяца, категории, кто сколько потратил, лимиты</li>
+        <li>Без регистрации, данные остаются на телефоне</li>
+      </ul>
+    </div>
+  </div>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">3</div>
+</section>
+
+<!-- 4 -->
+<section class="s" style="padding-bottom: 40px;">
+  <div class="eyebrow">Демо · работающий MVP</div>
+  <h2>Готовый продукт, а не макет</h2>
+  <div style="display: flex; gap: 28px; flex: 1; min-height: 0; align-items: flex-start;">
+    <img src="deck-desktop.jpg" class="shot" style="width: 780px; height: auto;" alt="">
+    <img src="deck-form.jpg" class="shot" style="height: 470px; width: auto;" alt="">
+  </div>
+  <p class="note" style="margin-top: 0;">Сводка месяца, диаграммы, история, лимиты, напоминания, цели, калькуляторы, демо-режим с туром · компьютер и телефон · светлая и тёмная тема</p>
+  <div class="num">4</div>
+</section>
+
+<!-- 5 -->
+<section class="s">
+  <div class="eyebrow">Роль ИИ</div>
+  <h2>ИИ — это ключевой сценарий: без него нет быстрого ввода</h2>
+  <div class="flow">
+    <div class="card"><h3>1. Фраза или голос</h3><p>Web Speech API (kk-KZ) или текст</p></div>
+    <div class="arrow">→</div>
+    <div class="card" style="box-shadow: inset 0 0 0 2px var(--accent);"><h3>2. Своя модель на устройстве</h3><p>Наивный Байес: основы слов + символьные 3-граммы, 291 размеченный пример kk/ru. Суммы «12к, 450 мың, 1,2 млн», имена с казахскими падежами</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><h3>3. Gemini (опция)</h3><p>Сложные фразы → JSON по строгой схеме. Через прокси, ключ не на странице. Нет ответа → своя модель</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><h3>4. Человек</h3><p>Проверяет поля и сохраняет. Неуверенная категория (&lt; 60%) — выбирает сам</p></div>
+  </div>
+  <p style="margin-top: 26px; font-size: 20px;">Сверх готового API: собственная модель и разметка, работа без интернета, порог уверенности, разбор казахских падежей. ИИ-помощник отвечает по сводке месяца.</p>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">5</div>
+</section>
+
+<!-- 6 -->
+<section class="s">
+  <div class="eyebrow">Качество ИИ · измерено</div>
+  <h2>Метрики на данных, которые модель не видела</h2>
+  <div class="grid3" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="card"><div class="big">86%</div><p style="margin-top: 10px;">точность категорий на «свежей» выборке (50 описаний, не использовались при настройке)</p></div>
+    <div class="card"><div class="big">28/28</div><p style="margin-top: 10px;">тестовых фраз разобраны полностью: сумма, имя, тип, категория</p></div>
+    <div class="card"><div class="big">96%</div><p style="margin-top: 10px;">точность, когда модель уверена ≥ 60% (это 95% случаев); иначе выбирает человек</p></div>
+    <div class="card"><div class="big">0 ₸</div><p style="margin-top: 10px;">стоимость основного ввода: модель работает в браузере, без сервера</p></div>
+  </div>
+  <p style="margin-top: 24px; font-size: 18px;" class="muted">Скрипт оценки и результаты открыты: ai/eval.js, ai/metrics.txt. Ошибки: редкие слова («шаш қидыру»), суммы словами. Следующий шаг — замер Gemini и сбор реальных фраз пилота.</p>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">6</div>
+</section>
+
+<!-- 7 -->
+<section class="s">
+  <div class="eyebrow">Ответственный ИИ</div>
+  <h2>Данные семьи не уходят никуда без согласия</h2>
+  <div class="grid2">
+    <div class="card"><h3>Приватность</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>История хранится только в браузере, сервера с базой нет</li><li>Gemini выключен по умолчанию; в него уходит только фраза или сводка месяца</li><li>Ключ API — в прокси Google Apps Script, не на странице</li></ul></div>
+    <div class="card"><h3>Контроль и прозрачность</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>Подпись «ИИ толтырды — тексеріңіз», значок «ИИ» в истории</li><li>Ответы помощника подписаны моделью; без советов по инвестициям и данных карт</li><li>Уровень риска по Закону РК «Об ИИ»: <b>минимальный</b> — решений о людях нет</li></ul></div>
+  </div>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">7</div>
+</section>
+
+<!-- 8 -->
+<section class="s">
+  <div class="eyebrow">Рынок</div>
+  <h2>Семьи Казахстана, где деньги тратят двое и больше</h2>
+  <div class="grid3">
+    <div class="card"><h3>Целевой клиент</h3><p>Семьи с детьми, доход 300–900 тыс. ₸/мес. Ранние: молодые семьи 25–40 лет, учителя и бюджетники, семьи с ипотекой и кредитами.</p></div>
+    <div class="card"><h3>Почему сейчас</h3><p>Рост цен и долговой нагрузки домохозяйств, госпрограммы финансовой грамотности, привычка к голосовым сообщениям на казахском.</p></div>
+    <div class="card"><h3>Выход</h3><p>Казахстан → Центральная Азия: модель дообучается на новые языки и категории без смены архитектуры.</p></div>
+  </div>
+  <p class="todo" style="margin-top: 24px;">[Команда: вставьте число домохозяйств и долю с доходом в сегменте из stat.gov.kz — без проверенных цифр не указываем]</p>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">8</div>
+</section>
+
+<!-- 9 -->
+<section class="s">
+  <div class="eyebrow">Конкуренты</div>
+  <h2>Собираем картину там, где банковская аналитика бессильна</h2>
+  <table>
+    <tr><th></th><th>Kaspi / Halyk аналитика</th><th>CoinKeeper</th><th>Monefy / Spendee</th><th>Тетрадь / Excel</th><th>Отбасы бюджеті</th></tr>
+    <tr><td>Наличные и другие банки</td><td>Нет</td><td>Вручную</td><td>Вручную</td><td>Да</td><td class="us">Одной фразой</td></tr>
+    <tr><td>Кто в семье сколько потратил</td><td>Нет</td><td>Частично</td><td>Нет</td><td>Вручную</td><td class="us">На главном экране</td></tr>
+    <tr><td>Казахский язык</td><td>Да</td><td>Нет</td><td>Нет</td><td>—</td><td class="us">Да</td></tr>
+    <tr><td>ИИ-ввод фразой и голосом</td><td>Нет</td><td>Нет</td><td>Нет</td><td>Нет</td><td class="us">Да, kk/ru</td></tr>
+    <tr><td>Регистрация, доступ к счетам</td><td>Аккаунт банка</td><td>Аккаунт</td><td>Аккаунт</td><td>Нет</td><td class="us">Не нужны</td></tr>
+    <tr><td>Цена</td><td>Бесплатно</td><td>Подписка</td><td>Freemium</td><td>Бесплатно</td><td class="us">Бесплатно + «Отбасы+»</td></tr>
+  </table>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">9</div>
+</section>
+
+<!-- 10 -->
+<section class="s">
+  <div class="eyebrow">Бизнес-модель</div>
+  <h2>Freemium для семей + B2B-программы финансовой грамотности</h2>
+  <div class="grid3">
+    <div class="card"><h3>Бесплатно</h3><p>Весь учёт, своя ИИ-модель, диаграммы, лимиты, напоминания, демо и калькуляторы.</p></div>
+    <div class="card" style="box-shadow: inset 0 0 0 2px var(--accent);"><h3>«Отбасы+» · 990 ₸/мес</h3><p>Синхронизация между телефонами семьи, Gemini-помощник, фото чека → запись, отчёты. Годовой план 7 900 ₸.</p></div>
+    <div class="card"><h3>B2B · 1,5–3 млн ₸/год</h3><p>Брендированная версия для банков, МФО, вузов и акиматов в программах финансовой грамотности.</p></div>
+  </div>
+  <p style="margin-top: 22px; font-size: 18px;">Юнит-экономика (допущения): доход ~800 ₸ с платящей семьи; затраты ИИ + сервер ≤ 28 ₸ на активную семью при основной работе своей модели; конверсия 3–5%. Безубыточность — около 30 000 активных семей и 3 B2B-контрактов.</p>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">10</div>
+</section>
+
+<!-- 11 -->
+<section class="s">
+  <div class="eyebrow">Тяга и план</div>
+  <h2>Что уже есть и что дальше</h2>
+  <div class="grid2">
+    <div class="card"><h3>Сейчас</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>MVP в открытом доступе, сделан и сдан по заказу</li><li>Своя ИИ-модель с открытыми метриками</li><li>Демо-режим и тур для показа</li></ul><p class="todo" style="margin-top: 14px;">[Команда: реальные пользователи / отзыв заказчика, если есть]</p></div>
+    <div class="card"><h3>24 месяца</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>1–3 мес: пилот 20–30 семей, замер ИИ на реальных фразах</li><li>4–6 мес: синхронизация, фото чека, запуск «Отбасы+» — 1 000 семей</li><li>7–12 мес: 10 000 семей, первый B2B-партнёр</li><li>13–24 мес: 50 000 семей, 3 B2B-контракта</li></ul></div>
+  </div>
+  <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">11</div>
+</section>
+
+<!-- 12 -->
+<section class="s" style="background: linear-gradient(120deg, #e2f3e9, #f3faf6 60%, #e2f3e9);">
+  <div class="eyebrow">Команда и запрос</div>
+  <h2>Ищем пилот-партнёра и менторство</h2>
+  <div class="grid2">
+    <div class="card"><h3>Команда</h3><p class="todo">[Капитан — ФИО, вуз, курс, роль: продукт, аналитика, бизнес]</p><p class="todo" style="margin-top: 10px;">[Жансұлу — ФИО, вуз, курс, роль]</p><p style="margin-top: 14px; font-size: 16px;">В работе использовали ИИ-ассистенты для кода и текстов — раскрыто в AI-карте.</p></div>
+    <div class="card"><h3>Запрос</h3><ul style="font-size: 19px; color: var(--ink-2);"><li>Пилот с банком, МФО или вузом в программе финансовой грамотности</li><li>Менторство по продукту и монетизации</li><li>Акселерация и грант на сервер синхронизации</li></ul></div>
+  </div>
+  <p style="margin-top: 26px; font-size: 24px; font-weight: 600; color: var(--accent-ink);">foxfordkz-cyber.github.io/qarzhy → «Сайтпен танысу»</p>
+  <div class="num">12</div>
+</section>
+</body>
+</html>

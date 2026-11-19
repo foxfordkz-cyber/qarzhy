@@ -847,3 +847,7 @@ button.op-title:focus-visible { outline-offset: 3px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
 }
+/* long Kazakh badge names ("Қауіпсіз пайдаланушы") must not overflow narrow badges */
+.badge > .badge-name, .badge > .badge-state { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+.c-ach { container: ach / inline-size; }
+@container ach (max-width: 420px) { .badge { grid-template-columns: 32px minmax(0, 1fr); column-gap: 8px; padding: 9px; font-size: 12.5px; } .badge svg.shield { width: 32px; height: 36px; } }
