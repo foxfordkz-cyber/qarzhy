@@ -57,6 +57,8 @@
     moon: '<path d="M19.5 14.2A7.8 7.8 0 0 1 9.8 4.5a7.8 7.8 0 1 0 9.7 9.7z"/>',
     sprout: '<path d="M12 20v-8"/><path d="M12 12c0-3.9 2.6-6.4 7-6.4 0 4.1-2.8 6.4-7 6.4z"/><path d="M12 14.6c0-2.9-2-4.9-5.4-4.9 0 3.1 2.2 4.9 5.4 4.9z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    mic: '<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/>',
+    sparkle: '<path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
     chevL: '<path d="m14.5 6-6 6 6 6"/>',
     chevR: '<path d="m9.5 6 6 6-6 6"/>',
     gauge: '<path d="M4.6 17a8 8 0 1 1 14.8 0"/><path d="m12 13.5 3.6-4"/><path d="M12 13.5h.01" stroke-width="3"/>',
@@ -691,7 +693,8 @@
       h('span', { class: 'op-amt' + (isInc ? ' pos' : '') }, (isInc ? '+' : '−') + fmtNum(r.amount) + NB + '₸'),
       h('span', { class: 'op-meta' },
         isInc ? h('span', { class: 'tag is-income' }, h('i'), 'Кіріс') : h('span', { class: 'tag' }, h('i'), cat.name),
-        h('span', { class: 'op-who' }, r.member + ' · ' + whenLabel(new Date(r.createdAt)))),
+        h('span', { class: 'op-who' }, r.member + ' · ' + whenLabel(new Date(r.createdAt))),
+        r.via ? h('span', { class: 'ai-tag', title: 'Бұл жазбаны ИИ толтырды, адам растады', html: icon('sparkle', 13) + 'ИИ' }) : null),
       h('button', { class: 'icon-btn op-del', type: 'button', title: 'Жою', 'aria-label': 'Жазбаны жою: ' + title + ', ' + fmtNum(r.amount) + ' теңге', html: icon('trash', 18), onclick: function () { askDelete(r); } }));
   }
   function renderNameChips() {
@@ -1175,12 +1178,32 @@
     if (/сәлем|салем/.test(t)) return 'Сәлеметсіз бе! Жинақ, несие, қауіпсіздік немесе айдың шығыстары туралы сұраңыз.';
     return 'Мен әзірге бета-нұсқадамын және мына тақырыптарда жауап беремін: жинақ, несие, қаржылық қауіпсіздік, айдың шығыстары мен қалдығы, лимиттер, өткен аймен салыстыру.';
   }
-  function pushMsg(text, who) { var c = $('chat'), m = h('div', { class: 'msg ' + who }, text); c.appendChild(m); c.scrollTop = c.scrollHeight; return m; }
+  function pushMsg(text, who, src) {
+    var c = $('chat'), m = h('div', { class: 'msg ' + who }, text, src ? h('span', { class: 'msg-src' }, src) : null);
+    c.appendChild(m); c.scrollTop = c.scrollHeight; return m;
+  }
+  function aiContext() {
+    var s = summarize(), g = goal();
+    return {
+      month: MONTHS[new Date().getMonth()] + ' ' + new Date().getFullYear(),
+      income: s.inc, expense: s.exp, balance: s.bal,
+      byCategory: { 'Азық-түлік': s.byCat.food, 'Көлік': s.byCat.transport, 'Үй': s.byCat.home, 'Басқа': s.byCat.other },
+      members: s.members.map(function (m) { return { name: m.name, spent: m.sum }; }),
+      allTimeSaved: Math.max(0, s.allBal),
+      goal: g ? { name: g.name, target: g.target } : null
+    };
+  }
   function ask(q) {
     q = q.trim(); if (!q) return;
     pushMsg(q, 'me');
     var typing = pushMsg('Жазып жатыр…', 'bot typing');
-    setTimeout(function () { typing.remove(); pushMsg(answer(q), 'bot'); }, 550);
+    var offline = function (why) { typing.remove(); pushMsg(answer(q), 'bot', why); };
+    if (!aiEndpoint()) { setTimeout(function () { offline('Офлайн көмекші · дайын жауаптар'); }, 450); return; }
+    callAI({ task: 'ask', question: q.slice(0, 300), context: aiContext() }, 12000).then(function (r) {
+      if (!r || typeof r.answer !== 'string' || !r.answer.trim()) throw new Error('empty');
+      typing.remove();
+      pushMsg(r.answer.trim().slice(0, 1200), 'bot', 'ИИ жауабы · ' + (r.model || 'Gemini') + ' · қателесуі мүмкін');
+    }).catch(function () { offline('Gemini қолжетімсіз, офлайн жауап'); });
   }
   function initChat() {
     pushMsg('Сәлем! Қандай сұрағыңыз бар?', 'bot');
@@ -1223,6 +1246,7 @@
         h('div', { class: 'seg' },
           h('button', { type: 'button', class: dark ? null : 'is-on', onclick: function () { setTheme('light'); openSettings(); } }, 'Күндізгі'),
           h('button', { type: 'button', class: dark ? 'is-on' : null, onclick: function () { setTheme('dark'); openSettings(); } }, 'Түнгі'))),
+      aiSettingsField(),
       h('div', { class: 'field' }, h('span', { class: 'lbl' }, 'Деректер'),
         h('p', { class: 'dlg-note' }, 'Жазбалар тек осы құрылғының браузерінде сақталады. Қазір сақталғаны: ' + state.personal.length + ' жазба.'),
         wipe, isDemo() ? h('p', { class: 'muted', style: 'font-size:13px' }, 'Мысал режимінде өшіру қолжетімсіз.') : null),
@@ -1297,6 +1321,26 @@
     rd.onerror = function () { toast('Файлды оқу мүмкін болмады', true); };
     rd.readAsText(file);
   });
+  function aiSettingsField() {
+    var input = h('input', { class: 'input', id: 'aiEndpointInput', placeholder: 'https://script.google.com/macros/s/…/exec', value: aiEndpoint() || '' });
+    var status = h('p', { class: 'dlg-note' }, aiEndpoint() ? 'Gemini қосулы. Жоқ болса, құрылғыдағы модель жұмыс істейді.' : 'Gemini қосылмаған: фразаларды құрылғыдағы ИИ-модель талдайды.');
+    var save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Сақтау және тексеру');
+    save.addEventListener('click', function () {
+      var v = input.value.trim();
+      try { if (v) localStorage.setItem(AI_EP_KEY, v); else localStorage.removeItem(AI_EP_KEY); } catch (e) {}
+      if (!v) { status.textContent = 'Gemini өшірілді.'; renderAiMode(); return; }
+      status.textContent = 'Тексеріп жатырмыз…';
+      callAI({ task: 'ping' }, 10000).then(function (r) {
+        status.textContent = r && r.ok ? 'Байланыс бар: ' + (r.model || 'Gemini') : 'Жауап келді, бірақ қате: ' + (r && r.error || 'белгісіз');
+        renderAiMode();
+      }).catch(function () { status.textContent = 'Байланыс жоқ. Сілтемені және Apps Script жариялау параметрлерін тексеріңіз.'; renderAiMode(); });
+    });
+    return h('div', { class: 'field' }, h('label', { class: 'lbl', for: 'aiEndpointInput' }, 'Жасанды интеллект (Gemini)'), input, save, status);
+  }
+  function renderAiMode() {
+    $('aiMode').textContent = aiEndpoint() ? 'Жауаптарды Gemini жасайды · қателесуі мүмкін' : 'Офлайн режим: дайын жауаптар. Gemini Параметрлерде қосылады';
+  }
+
   function openHelp() {
     var faq = [
       ['Деректерім қайда сақталады?', 'Тек осы құрылғының браузерінде. Сайт оларды ешқайда жібермейді. Басқа телефоннан не компьютерден ашсаңыз, жазбалар көрінбейді.'],
@@ -1312,6 +1356,116 @@
       h('button', { class: 'btn btn-soft', type: 'button', onclick: function () { panel.close(); startTour(); } }, h('span', { html: icon('play', 16), style: 'display:inline-grid' }), 'Сайтпен танысу турын бастау')]);
   }
 
+  /* ---------- AI: Gemini through the family's Apps Script proxy, on-device model as fallback ---------- */
+  var AI_EP_KEY = 'otbasy-budget:v1:ai-endpoint';
+  var AI_DEFAULT_ENDPOINT = '';
+  function aiEndpoint() { try { return localStorage.getItem(AI_EP_KEY) || AI_DEFAULT_ENDPOINT; } catch (e) { return AI_DEFAULT_ENDPOINT; } }
+  function callAI(payload, ms) {
+    var ep = aiEndpoint();
+    if (!ep) return Promise.reject(new Error('no endpoint'));
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms || 8000);
+    return fetch(ep, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .finally(function () { clearTimeout(timer); });
+  }
+  var AUTO_THRESHOLD = 0.6;
+  var aiFilledBy = null;
+  function validAI(r) {
+    if (!r || (r.type !== 'income' && r.type !== 'expense')) return null;
+    var amount = Math.round(+r.amount);
+    return {
+      type: r.type,
+      amount: amount > 0 && amount <= MAX_AMOUNT ? amount : null,
+      member: typeof r.member === 'string' && r.member.trim() ? r.member.trim().slice(0, 24) : null,
+      category: r.type === 'expense' && CATS[r.category] ? r.category : null,
+      note: typeof r.note === 'string' ? r.note.trim().slice(0, 60) : '',
+      confidence: r.type === 'expense' && CATS[r.category] ? 0.9 : (r.type === 'income' ? 0.9 : 0)
+    };
+  }
+  function setAiStatus(text, warn) { var el = $('aiStatus'); el.hidden = !text; el.className = 'ai-status' + (warn ? ' is-warn' : ''); el.innerHTML = icon(warn ? 'bulb' : 'sparkle', 14); el.appendChild(h('span', null, text)); }
+  function markFilled(id) { var el = $(id); el.classList.add('ai-filled'); setTimeout(function () { el.classList.remove('ai-filled'); }, 2500); }
+  function applyParse(r, source) {
+    if (r.type === 'income') $('tIncome').checked = true; else $('tExpense').checked = true;
+    syncType();
+    if (r.amount) { $('amount').value = fmtNum(r.amount); clearErr('amount'); markFilled('amount'); }
+    if (r.member) { $('member').value = normalizeName(r.member); clearErr('member'); renderNameChips(); markFilled('member'); }
+    if (r.note) $('note').value = r.note;
+    [].forEach.call(document.querySelectorAll('input[name="cat"]'), function (el) { el.checked = false; });
+    var unsure = false;
+    if (r.type === 'expense') {
+      if (r.category && r.confidence >= AUTO_THRESHOLD) { $({ food: 'cFood', transport: 'cTransport', home: 'cHome', other: 'cOther' }[r.category]).checked = true; clearErr('cat'); }
+      else unsure = true;
+    }
+    aiFilledBy = source;
+    renderCatSuggest();
+    var missing = [];
+    if (!r.amount) missing.push('соманы');
+    if (!r.member) missing.push('отбасы мүшесін');
+    if (unsure) missing.push('санатты');
+    var who = source === 'gemini' ? 'Gemini' : 'Құрылғыдағы ИИ-модель';
+    if (missing.length) setAiStatus(who + ' толтырды. Енді ' + missing.join(', ') + ' өзіңіз көрсетіңіз.', true);
+    else setAiStatus(who + ' толтырды. Тексеріп, «' + $('submitBtn').textContent + '» басыңыз.');
+  }
+  function runAiFill() {
+    var text = $('aiText').value.trim();
+    if (!text) { setAiStatus('Бір сөйлем жазыңыз немесе микрофонды басып айтыңыз.', true); $('aiText').focus(); return; }
+    var local = OtbasyAI.parsePhrase(text, knownNames());
+    if (!aiEndpoint()) { applyParse(local, 'local'); return; }
+    var btn = $('aiFill'); btn.disabled = true; setAiStatus('Gemini талдап жатыр…');
+    callAI({ task: 'parse', text: text.slice(0, 200), names: knownNames().slice(0, 10) }, 8000).then(function (r) {
+      var g = validAI(r);
+      if (!g) throw new Error('bad');
+      if (!g.member) g.member = local.member;
+      if (!g.amount) g.amount = local.amount;
+      if (!g.note) g.note = local.note;
+      applyParse(g, 'gemini');
+    }).catch(function () {
+      applyParse(local, 'local');
+      setAiStatus($('aiStatus').textContent + ' (Gemini қолжетімсіз болды)', true);
+    }).finally(function () { btn.disabled = false; });
+  }
+  $('aiFill').addEventListener('click', runAiFill);
+  $('aiText').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runAiFill(); } });
+
+  /* voice input: the browser's speech recognition, Kazakh first */
+  (function initMic() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    var btn = $('aiMic'), rec = null, on = false;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      if (on && rec) { rec.stop(); return; }
+      try { rec = new SR(); } catch (e) { btn.hidden = true; return; }
+      rec.lang = 'kk-KZ'; rec.interimResults = true; rec.maxAlternatives = 1;
+      rec.onresult = function (ev) { var t = ''; for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript; $('aiText').value = t; if (ev.results[ev.results.length - 1].isFinal) runAiFill(); };
+      rec.onerror = function (ev) { setAiStatus(ev.error === 'not-allowed' ? 'Микрофонға рұқсат жоқ. Мәтінмен жазыңыз.' : 'Дауысты тану сәтсіз болды. Мәтінмен жазып көріңіз.', true); };
+      rec.onend = function () { on = false; btn.classList.remove('is-on'); };
+      on = true; btn.classList.add('is-on'); setAiStatus('Тыңдап тұрмын… айтыңыз');
+      try { rec.start(); } catch (e) { on = false; btn.classList.remove('is-on'); }
+    });
+  })();
+
+  /* category suggestion while typing a description */
+  var suggestTimer = null;
+  function renderCatSuggest() {
+    var box = $('catSuggest');
+    box.textContent = '';
+    var chosen = document.querySelector('input[name="cat"]:checked');
+    var text = $('note').value.trim();
+    if (currentType() !== 'expense' || chosen || !text) { box.hidden = true; return; }
+    var sug = OtbasyAI.suggestCategory(text);
+    if (!sug) { box.hidden = true; return; }
+    var c = sug.category;
+    box.appendChild(h('span', { html: icon('sparkle', 14), style: 'display:inline-grid;color:var(--accent)' }));
+    box.appendChild(h('span', null, 'ИИ ұсынысы:'));
+    box.appendChild(h('button', { class: 'chip', type: 'button', style: '--c:' + CATS[c].color, onclick: function () {
+      $({ food: 'cFood', transport: 'cTransport', home: 'cHome', other: 'cOther' }[c]).checked = true; clearErr('cat'); aiFilledBy = aiFilledBy || 'local'; renderCatSuggest();
+    } }, h('i'), CATS[c].name + ' · ' + Math.round(sug.prob * 100) + '%'));
+    box.hidden = false;
+  }
+  $('note').addEventListener('input', function () { clearTimeout(suggestTimer); suggestTimer = setTimeout(renderCatSuggest, 250); });
+
   /* ---------- entry form ---------- */
   var form = $('form');
   function currentType() { return $('tIncome').checked ? 'income' : 'expense'; }
@@ -1321,6 +1475,7 @@
     $('submitBtn').textContent = state.editingId ? 'Өзгерісті сақтау' : inc ? 'Кірісті қосу' : 'Шығысты қосу';
     $('note').placeholder = inc ? 'Мысалы, жалақы' : 'Мысалы, апталық азық-түлік';
     clearErr('cat');
+    if ($('catSuggest')) renderCatSuggest();
   }
   $('tIncome').addEventListener('change', syncType);
   $('tExpense').addEventListener('change', syncType);
@@ -1353,7 +1508,7 @@
     syncType();
     renderNameChips();
   }
-  [].forEach.call(document.querySelectorAll('input[name="cat"]'), function (el) { el.addEventListener('change', function () { clearErr('cat'); }); });
+  [].forEach.call(document.querySelectorAll('input[name="cat"]'), function (el) { el.addEventListener('change', function () { clearErr('cat'); renderCatSuggest(); }); });
   function showErr(field, msg) { var e = $(field + 'Err'); e.textContent = msg; e.hidden = false; if (field !== 'cat') $(field).setAttribute('aria-invalid', 'true'); }
   function clearErr(field) { var e = $(field + 'Err'); if (e) { e.hidden = true; e.textContent = ''; } if (field !== 'cat') $(field).removeAttribute('aria-invalid'); }
 
@@ -1381,14 +1536,17 @@
       rec.type = type; rec.amount = amount; rec.member = member; rec.note = note; rec.category = category; rec.createdAt = when.toISOString();
     } else {
       rec = { id: uid(), type: type, amount: amount, member: member, note: note, category: category, createdAt: when.toISOString() };
+      if (aiFilledBy) rec.via = aiFilledBy;
       records().push(rec);
     }
     state.flashId = rec.id;
     state.viewMonth = monthKey(when);
     $('member').value = member;
     commit();
-    $('amount').value = ''; $('note').value = '';
+    $('amount').value = ''; $('note').value = ''; $('aiText').value = '';
+    aiFilledBy = null; setAiStatus('');
     if (catEl) catEl.checked = false;
+    renderCatSuggest();
     renderNameChips();
     toast(editing ? 'Жазба өзгертілді' : (type === 'income' ? 'Кіріс қосылды: +' : 'Шығыс қосылды: −') + fmtNum(amount) + NB + '₸');
     closeEntry();
@@ -1468,7 +1626,9 @@
     fillForm(rec && rec.id && rec.type ? rec : null);
     $('entry').classList.add('open'); $('scrim').classList.add('open', 'over-entry');
     document.documentElement.classList.add('lock'); setInert(true); openName = 'entry';
-    setTimeout(function () { $('amount').focus({ preventScroll: true }); }, 60);
+    $('aiText').value = ''; setAiStatus(''); aiFilledBy = null; renderCatSuggest();
+    var editingRec = rec && rec.id && rec.type;
+    setTimeout(function () { $(editingRec ? 'amount' : 'aiText').focus({ preventScroll: true }); }, 60);
   }
   function closeEntry() {
     if (openName !== 'entry') return;
@@ -1664,6 +1824,7 @@
   renderTip();
   renderArticle();
   initChat();
+  renderAiMode();
   $('storageWarn').hidden = storageOk;
   paintTheme();
   fillForm(null);

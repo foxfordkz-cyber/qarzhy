@@ -133,7 +133,7 @@
         <section class="card c-hero" id="hero" aria-labelledby="heroTitle">
           <div class="hero-text">
             <h2 id="heroTitle">Отбасының ақшасы — бақылауда!</h2>
-            <p>Кіріс пен шығысты жазыңыз, айдың қалдығын көріңіз, саналы шешім қабылдаңыз.</p>
+            <p>Шығысты бір сөйлеммен айтыңыз: жасанды интеллект соманы, кім жұмсағанын және санатын өзі толтырады.</p>
             <div class="hero-actions">
               <button class="btn btn-primary btn-lg" data-action="add" type="button">Жазба қосу<span data-icon="arrow" data-size="18"></span></button>
               <button class="link" data-action="demo" type="button" id="heroDemo"><span data-icon="eye" data-size="16"></span>Мысалды көру</button>
@@ -383,7 +383,10 @@
 
         <section class="card c-ai" id="aiCard" aria-labelledby="aiTitle">
           <div class="card-head">
-            <h2 class="card-title" id="aiTitle">Қаржы көмекшісі<span class="badge-beta">Бета</span></h2>
+            <div>
+              <h2 class="card-title" id="aiTitle">Қаржы көмекшісі<span class="badge-beta">ИИ · Бета</span></h2>
+              <p class="ai-sub" id="aiMode">Жауаптарды жасанды интеллект жасайды</p>
+            </div>
           </div>
           <div class="chat" id="chat" aria-live="polite"></div>
           <div class="sugs" id="sugs"></div>
@@ -411,6 +414,17 @@
       <h2 id="formTitle">Жаңа жазба</h2>
       <button class="icon-btn" id="closeSheetBtn" type="button" aria-label="Жабу"><span data-icon="x" data-size="20"></span></button>
     </div>
+    <div class="ai-box" id="aiBox">
+      <label class="ai-label" for="aiText"><span data-icon="sparkle" data-size="16"></span>ИИ-мен жазу</label>
+      <div class="ai-row">
+        <input class="input" id="aiText" autocomplete="off" maxlength="160" placeholder="Мысалы: Айгүл Магнумнан 12 500-ге азық-түлік алды">
+        <button class="icon-btn ai-mic" id="aiMic" type="button" aria-label="Дауыспен айту" title="Дауыспен айту" hidden><span data-icon="mic" data-size="20"></span></button>
+      </div>
+      <button class="btn btn-soft btn-block" id="aiFill" type="button"><span data-icon="sparkle" data-size="16"></span>Өрістерді толтыру</button>
+      <p class="ai-status" id="aiStatus" hidden></p>
+      <p class="ai-note">Жазбаны жасанды интеллект толтырады. Ол қателесуі мүмкін: сақтамас бұрын тексеріңіз.</p>
+    </div>
+    <div class="or-sep"><span>немесе қолмен</span></div>
     <div class="seg" role="radiogroup" aria-label="Жазба түрі">
       <input type="radio" name="type" id="tExpense" value="expense" checked>
       <label for="tExpense">Шығыс</label>
@@ -443,6 +457,7 @@
         <input type="radio" name="cat" id="cOther" value="other">
         <label for="cOther" style="--c: var(--c-other)"><span class="cat-ico" data-icon="other" data-size="18"></span>Басқа</label>
       </div>
+      <p class="ai-suggest" id="catSuggest" hidden></p>
       <p class="err" id="catErr" hidden></p>
     </fieldset>
     <div class="grid2 form-row">
@@ -500,6 +515,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="js/ai.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

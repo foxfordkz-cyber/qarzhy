@@ -1,0 +1,39 @@
+Training examples: 291, hold-out examples: 100
+
+1) Classification (5 classes) accuracy: 98.0%  (98/100)
+   Macro-F1: 98.0%
+   income     precision 90.9%  recall 100.0%  F1 95.2%
+   food       precision 100.0%  recall 100.0%  F1 100.0%
+   transport  precision 100.0%  recall 95.0%  F1 97.4%
+   home       precision 100.0%  recall 95.0%  F1 97.4%
+   other      precision 100.0%  recall 100.0%  F1 100.0%
+   Confusion (rows = true, cols = predicted): income / food / transport / home / other
+   income      20   0   0   0   0
+   food         0  20   0   0   0
+   transport    1   0  19   0   0
+   home         1   0   0  19   0
+   other        0   0   0   0  20
+   Errors:
+     - индрайвпен  →  income (керек: transport)
+     - аренда за месяц  →  income (керек: home)
+
+1b) FRESH hold-out (never used for tuning): accuracy 86.0%  (43/50)
+   Errors:
+     - жұмыстан бонус берді  →  food (керек: income)
+     - ата-анам көмек жіберді  →  transport (керек: income)
+     - балалар үшін йогурт  →  other (керек: food)
+     - суық су есептегіш  →  food (керек: home)
+     - ванна жөндеу  →  transport (керек: home)
+     - мектеп формасы  →  transport (керек: other)
+     - шаш қидыру  →  transport (керек: other)
+   threshold 0.5: auto-filled 99.3% of cases, accuracy among them 94.0%
+   threshold 0.6: auto-filled 95.3% of cases, accuracy among them 95.8%
+   threshold 0.7: auto-filled 95.3% of cases, accuracy among them 95.8%
+   threshold 0.8: auto-filled 93.3% of cases, accuracy among them 96.4%
+
+2) Phrase parsing, 28 phrases:
+   type      100.0%
+   amount    100.0%
+   member    100.0%
+   category  100.0%
+   all four fields correct: 100.0%  (28/28)
