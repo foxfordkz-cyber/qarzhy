@@ -1,17 +1,19 @@
 /**
- * Otbasy Budget — Gemini proxy on Google Apps Script.
+ * «Отбасы бюджеті» үшін Google Apps Script арқылы Gemini-ге қосылу.
  *
- * The site never sees the Gemini API key: it calls this web app, and this script calls Gemini.
- * Setup (see apps-script/README.md):
- *   1. script.google.com → New project → paste this file.
- *   2. Project Settings → Script properties:
- *        GEMINI_API_KEY = <key from aistudio.google.com>
- *        GEMINI_MODEL   = gemini-3.1-flash-lite (optional override for a compatible text model)
- *   3. Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone → copy the /exec URL.
- *   4. On the site: Параметрлер → Жасанды интеллект (Gemini) → paste the URL → Сақтау және тексеру.
+ * API кілті осы проксиде сақталады. Сайт тек веб-қосымшаға сұрау жібереді.
+ * Толық нұсқаулық — apps-script/README.md.
+ *   1. script.google.com сайтында жаңа жоба ашып, осы кодты енгізіңіз.
+ *   2. Project Settings → Script properties бөлімінде қасиеттерді орнатыңыз.
+ *        GEMINI_API_KEY — Google AI Studio кілті.
+ *        GEMINI_MODEL   — міндетті емес. Әдепкі модель — gemini-3.1-flash-lite.
+ *   3. Deploy → New deployment → Web app. Орындаушы — Me, қолжетімділік — Anyone.
+ *      /exec деп аяқталатын толық сілтемені көшіріңіз.
+ *   4. Сайтта «Параметрлер» → «Жасанды интеллект (Gemini)» бөлімін ашыңыз.
+ *      Сілтемені енгізіп, «Сақтау және тексеру» түймесін басыңыз.
  *
- * Personal mode sends the entered phrase or the question and budget totals when enabled.
- * Demo and transaction lookups run locally. The proxy does not store requests.
+ * Қосулы болса, жеке бюджеттен бір сөйлем немесе сұрақ пен жиынтық сандар жіберіледі.
+ * Демода және тарих бойынша есептеу кезінде мәтін құрылғыда өңделеді. Прокси сұрауларды сақтамайды.
  */
 
 var PROPS = PropertiesService.getScriptProperties();

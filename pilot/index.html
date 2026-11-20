@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="ru">
+<html lang="kk">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3f6f2">
-  <meta name="description" content="Сравните ручной ввод и ИИ в семейном бюджете на шести вымышленных операциях.">
-  <title>Тест ввода · Отбасы бюджеті</title>
+  <meta name="description" content="Отбасы бюджетіне алты оқу жазбасын енгізіп, қолмен және жасанды интеллект көмегімен енгізуге кеткен уақытты салыстырыңыз.">
+  <title>Жазба енгізу сынағы · Отбасы бюджеті</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="../js/service-config.js"></script>
   <script defer src="../js/ai.js"></script>
@@ -13,101 +13,101 @@
   <script defer src="app.js"></script>
 </head>
 <body>
-  <header class="top"><a class="brand" href="../" lang="kk">Отбасы бюджеті</a><a class="back" href="../">К бюджету</a></header>
+  <header class="top"><a class="brand" href="../" lang="kk">Отбасы бюджеті</a><a class="back" href="../">Бюджетке оралу</a></header>
   <main class="workspace">
-    <div id="pilot-qa" class="notice" hidden>Технический прогон. Отправка результата отключена.</div>
+    <div id="pilot-qa" class="notice" hidden>Техникалық тексеріс. Бұл режимде нәтиже жіберілмейді.</div>
     <section class="sheet" id="pilot-intro" aria-labelledby="intro-title">
-      <h1 id="intro-title">Как быстрее внести операцию?</h1>
-      <p class="lead">Внесите три записи вручную и три с помощью ИИ. Для каждого задания дана вымышленная операция семьи.</p>
+      <h1 id="intro-title">Жазбаны қай тәсілмен тезірек енгізесіз?</h1>
+      <p class="lead">Үш жазбаны қолмен, үшеуін жасанды интеллект (ЖИ) көмегімен енгізіңіз. Әр тапсырмада отбасының ойдан алынған бір кірісі немесе шығысы берілген.</p>
       <div class="instructions">
-        <p>Пользуйтесь клавиатурой в обоих режимах. В режиме ИИ введите фразу своими словами, проверьте результат и при необходимости исправьте его.</p>
-        <p>Таймер считает время от открытия задания до верного подтверждения. Когда вкладка скрыта или вы отдыхаете между заданиями, отсчёт приостанавливается.</p>
+        <p>Екі тәсілде де пернетақтаны пайдаланыңыз. ЖИ көмегімен енгізгенде, тапсырманы өз сөзіңізбен жазыңыз. Ұсынылған жазбаны тексеріп, қажет болса түзетіңіз.</p>
+        <p>Уақыт тапсырманы ашқаннан бастап дұрыс жазбаны растағанға дейін өлшенеді. Басқа қойындыға ауысқанда немесе тапсырмалар арасында демалғанда таймер тоқтайды.</p>
       </div>
-      <fieldset class="language"><legend>Язык заданий</legend>
-        <label><input type="radio" name="language" value="ru" checked>Русский</label>
-        <label><input type="radio" name="language" value="kk"><span lang="kk">Қазақша</span></label>
+      <fieldset class="language"><legend>Тапсырма тілі</legend>
+        <label><input type="radio" name="language" value="kk" checked>Қазақша</label>
+        <label><input type="radio" name="language" value="ru">Орысша</label>
       </fieldset>
-      <button class="primary" id="pilot-start" type="button">Начать тест</button>
-      <p class="fine">После шести заданий вы увидите свой результат и сможете поделиться им с командой.</p>
-      <a class="back" href="./?results=1">Посмотреть общие результаты</a>
+      <button class="primary" id="pilot-start" type="button">Сынақты бастау</button>
+      <p class="fine">Алты тапсырмадан кейін өз нәтижеңізді көресіз. Қаласаңыз, оны жоба тобына жібере аласыз.</p>
+      <a class="back" href="./?results=1">Жалпы нәтижелерді көру</a>
     </section>
     <section class="sheet" id="pilot-task" aria-labelledby="pilot-heading" hidden>
-      <div class="progress-line"><span id="pilot-progress"></span><progress id="pilot-meter" max="6" value="0" aria-label="Выполненные задания"></progress></div>
+      <div class="progress-line"><span id="pilot-progress"></span><progress id="pilot-meter" max="6" value="0" aria-label="Орындалған тапсырмалар"></progress></div>
       <h1 id="pilot-heading" tabindex="-1"></h1>
       <p class="scenario" id="pilot-scenario"></p>
       <form id="pilot-composer" hidden>
-        <label for="pilot-phrase">Запишите операцию одной фразой</label>
-        <textarea id="pilot-phrase" rows="2" maxlength="160" autocomplete="off" spellcheck="false" placeholder="На русском или казахском"></textarea>
-        <button class="soft" id="pilot-parse" type="submit">Заполнить с ИИ</button>
+        <label for="pilot-phrase">Кірісті немесе шығысты бір сөйлеммен жазыңыз</label>
+        <textarea id="pilot-phrase" rows="2" maxlength="160" autocomplete="off" spellcheck="false" placeholder="Қазақша немесе орысша"></textarea>
+        <button class="soft" id="pilot-parse" type="submit">ЖИ көмегімен толтыру</button>
         <p class="fine" id="pilot-model" role="status"></p>
       </form>
       <form id="pilot-record" novalidate autocomplete="off">
-        <fieldset id="field-type" aria-describedby="error-type"><legend>Вид операции</legend><div class="choices">
-          <label><input name="type" type="radio" value="expense"><span>Расход</span></label>
-          <label><input name="type" type="radio" value="income"><span>Доход</span></label>
+        <fieldset id="field-type" aria-describedby="error-type"><legend>Жазба түрі</legend><div class="choices">
+          <label><input name="type" type="radio" value="expense"><span>Шығыс</span></label>
+          <label><input name="type" type="radio" value="income"><span>Кіріс</span></label>
         </div><p class="error" id="error-type" hidden></p></fieldset>
         <div class="fields">
-          <div><label for="pilot-amount">Сумма, ₸</label><input id="pilot-amount" inputmode="numeric" aria-describedby="error-amount" maxlength="16"><p class="error" id="error-amount" hidden></p></div>
-          <div><label for="pilot-member">Член семьи</label><input id="pilot-member" list="pilot-names" aria-describedby="error-member" maxlength="24"><datalist id="pilot-names"></datalist><p class="error" id="error-member" hidden></p></div>
+          <div><label for="pilot-amount">Сома, ₸</label><input id="pilot-amount" inputmode="numeric" aria-describedby="error-amount" maxlength="16"><p class="error" id="error-amount" hidden></p></div>
+          <div><label for="pilot-member">Отбасы мүшесі</label><input id="pilot-member" list="pilot-names" aria-describedby="error-member" maxlength="24"><datalist id="pilot-names"></datalist><p class="error" id="error-member" hidden></p></div>
         </div>
-        <fieldset id="field-category" aria-describedby="error-category"><legend>Категория</legend><div class="choices">
-          <label><input name="category" type="radio" value="food"><span>Продукты</span></label>
-          <label><input name="category" type="radio" value="transport"><span>Транспорт</span></label>
-          <label><input name="category" type="radio" value="home"><span>Жильё</span></label>
-          <label><input name="category" type="radio" value="other"><span>Прочее</span></label>
+        <fieldset id="field-category" aria-describedby="error-category"><legend>Санат</legend><div class="choices">
+          <label><input name="category" type="radio" value="food"><span>Азық-түлік</span></label>
+          <label><input name="category" type="radio" value="transport"><span>Көлік</span></label>
+          <label><input name="category" type="radio" value="home"><span>Үй</span></label>
+          <label><input name="category" type="radio" value="other"><span>Басқа</span></label>
         </div><p class="error" id="error-category" hidden></p></fieldset>
         <p class="fine" id="pilot-feedback" role="status"></p>
-        <button class="primary" type="submit" id="pilot-confirm">Подтвердить запись</button>
+        <button class="primary" type="submit" id="pilot-confirm">Жазбаны растау</button>
       </form>
     </section>
     <section class="sheet" id="pilot-rest" aria-labelledby="rest-title" hidden>
-      <h1 id="rest-title" tabindex="-1">Запись подтверждена</h1>
+      <h1 id="rest-title" tabindex="-1">Жазба расталды</h1>
       <p class="lead" id="pilot-rest-count"></p>
-      <p class="fine">Таймер следующего задания запустится, когда вы его откроете.</p>
-      <button class="primary" id="pilot-next" type="button">Открыть следующее задание</button>
+      <p class="fine">Келесі тапсырманың уақыты оны ашқан сәттен бастап өлшенеді.</p>
+      <button class="primary" id="pilot-next" type="button">Келесі тапсырманы ашу</button>
     </section>
     <section class="sheet" id="pilot-results" aria-labelledby="results-title" hidden>
-      <h1 id="results-title" tabindex="-1">Ваш результат</h1>
-      <p class="lead">Все шесть операций совпали с условиями заданий. Ниже — медианное время на одну запись в каждом режиме.</p>
+      <h1 id="results-title" tabindex="-1">Сіздің нәтижеңіз</h1>
+      <p class="lead">Алты жазба да тапсырма шарттарына сай келеді. Төменде әр тәсілмен бір жазбаны енгізуге кеткен уақыттың медианасы көрсетілген.</p>
       <div class="metrics">
-        <div><span>Вручную</span><strong id="pilot-manual-time"></strong><small id="pilot-manual-errors"></small></div>
-        <div><span>С помощью ИИ</span><strong id="pilot-ai-time"></strong><small id="pilot-ai-errors"></small></div>
+        <div><span>Қолмен</span><strong id="pilot-manual-time"></strong><small id="pilot-manual-errors"></small></div>
+        <div><span>ЖИ көмегімен</span><strong id="pilot-ai-time"></strong><small id="pilot-ai-errors"></small></div>
       </div>
       <p class="fine" id="pilot-corrections"></p>
-      <details><summary>Посмотреть шесть измерений</summary><ol id="pilot-measurements"></ol></details>
+      <details><summary>Алты тапсырманың уақытын көру</summary><ol id="pilot-measurements"></ol></details>
       <div class="share">
-        <h2>Результат для команды</h2>
-        <p>В отчёте будут случайный код прохождения, номера и порядок заданий, способ ввода, активное время, число неудачных подтверждений и исправленных полей ИИ.</p>
-        <label class="consent"><input id="pilot-consent" type="checkbox"><span>Согласен отправить эти результаты команде проекта.</span></label>
-        <button class="primary" id="pilot-send" type="button" disabled>Отправить результат</button>
+        <h2>Нәтижені жоба тобына жіберу</h2>
+        <p>Есепке кездейсоқ берілген сынақ коды, тапсырмалардың нөмірі мен реті, енгізу тәсілі, жұмсалған уақыт, сәтсіз растаулар саны және ЖИ ұсынған жазбада түзетуді қажет еткен өрістер саны кіреді.</p>
+        <label class="consent"><input id="pilot-consent" type="checkbox"><span>Нәтижемді жоба тобына жіберуге келісемін.</span></label>
+        <button class="primary" id="pilot-send" type="button" disabled>Нәтижені жіберу</button>
         <p class="fine" id="pilot-send-status" role="status"></p>
-        <div class="actions"><button class="soft" id="pilot-copy" type="button">Скопировать отчёт</button><button class="soft" id="pilot-download" type="button">Скачать JSON</button></div>
-        <textarea id="pilot-export" rows="6" aria-label="JSON отчёта для копирования" hidden readonly></textarea>
+        <div class="actions"><button class="soft" id="pilot-copy" type="button">Есепті көшіру</button><button class="soft" id="pilot-download" type="button">JSON файлын жүктеп алу</button></div>
+        <textarea id="pilot-export" rows="6" aria-label="Көшіруге арналған JSON есебі" hidden readonly></textarea>
         <p class="fine" id="pilot-export-status" role="status"></p>
       </div>
-      <div class="actions"><a class="back" href="./?results=1">Общие результаты пилота</a><button class="soft" type="button" id="pilot-again">Новое прохождение</button></div>
+      <div class="actions"><a class="back" href="./?results=1">Сынақтың жалпы нәтижелері</a><button class="soft" type="button" id="pilot-again">Сынақты қайта өту</button></div>
     </section>
     <section class="sheet" id="pilot-summary" aria-labelledby="summary-title" hidden>
-      <h1 id="summary-title" tabindex="-1">Общие результаты пилота</h1>
-      <p class="lead">Здесь учитываются завершённые прохождения, результатами которых участники решили поделиться. Один человек может пройти тест повторно.</p>
+      <h1 id="summary-title" tabindex="-1">Сынақтың жалпы нәтижелері</h1>
+      <p class="lead">Мұнда сынақты аяқтап, нәтижесін бөлісуге келіскендердің деректері көрсетіледі. Бір адам сынақты бірнеше рет өте алады.</p>
       <p id="summary-status" class="fine" role="status"></p>
       <div id="summary-data" hidden>
         <p class="scenario" id="summary-count"></p>
         <div id="summary-measures" hidden>
-          <p>Для каждого прохождения берётся медианное время его трёх заданий в каждом режиме. Ниже показаны медианы этих личных результатов.</p>
+          <p>Әр адам үшін екі тәсілдің әрқайсысындағы үш тапсырманың медианалық уақыты есептеледі. Төменде осы жеке нәтижелердің медианасы берілген.</p>
           <div class="metrics">
-            <div><span>Вручную</span><strong id="summary-manual"></strong><small id="summary-manual-errors"></small></div>
-            <div><span>С помощью ИИ</span><strong id="summary-ai"></strong><small id="summary-ai-errors"></small></div>
+            <div><span>Қолмен</span><strong id="summary-manual"></strong><small id="summary-manual-errors"></small></div>
+            <div><span>ЖИ көмегімен</span><strong id="summary-ai"></strong><small id="summary-ai-errors"></small></div>
           </div>
           <p class="fine" id="summary-corrections"></p><p class="fine" id="summary-orders"></p>
         </div>
       </div>
-      <p class="fine">Цель первого пилота — пять участников. Каждый проходит шесть заданий на своём устройстве.</p>
-      <div class="actions"><button type="button" id="summary-invite" class="primary">Скопировать приглашение</button><button type="button" id="summary-refresh" class="soft">Обновить</button><a href="./" class="back">Пройти тест</a></div>
+      <p class="fine">Алғашқы сынаққа бес адам қатыстыруды жоспарлап отырмыз. Әр адам өз құрылғысында алты тапсырма орындайды.</p>
+      <div class="actions"><button type="button" id="summary-invite" class="primary">Шақыру мәтінін көшіру</button><button type="button" id="summary-refresh" class="soft">Жаңарту</button><a href="./" class="back">Сынақтан өту</a></div>
       <p class="fine" id="summary-invite-status" role="status"></p>
-      <textarea id="summary-invite-text" aria-label="Приглашение на тест" readonly hidden></textarea>
+      <textarea id="summary-invite-text" aria-label="Сынаққа шақыру мәтіні" readonly hidden></textarea>
     </section>
-    <noscript><p class="notice">Для разбора фраз и измерения времени включите JavaScript в браузере.</p></noscript>
+    <noscript><p class="notice">Сөйлемдерді талдау және уақытты өлшеу үшін браузерде JavaScript-ті қосыңыз.</p></noscript>
   </main>
 </body>
 </html>

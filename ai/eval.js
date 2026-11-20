@@ -91,17 +91,19 @@ const PHRASES = [
   ['Сәуле дүкеннен 7 400', { type: 'expense', amount: 7400, member: 'Сәуле', category: 'food' }]
 ];
 
-function pct(x) { return (x * 100).toFixed(1) + '%'; }
+function pct(x) { return (x * 100).toFixed(1).replace('.', ',') + '%'; }
 
 /* 1. Five-class classification (type + category) on descriptions */
 const labels = AI.LABELS;
+const classNames = { income: 'Кіріс', food: 'Азық-түлік', transport: 'Көлік', home: 'Үй', other: 'Басқа' };
+const fieldNames = { type: 'Жазба түрі', amount: 'Сома', member: 'Адам', category: 'Санат' };
 const conf = {}; labels.forEach(a => { conf[a] = {}; labels.forEach(b => conf[a][b] = 0); });
 let ok = 0;
 const misses = [];
 TEST.forEach(([gold, text]) => {
   const p = AI.predict(text).label;
   conf[gold][p]++;
-  if (p === gold) ok++; else misses.push(`${text}  →  ${p} (керек: ${gold})`);
+  if (p === gold) ok++; else misses.push(`${text}  →  ${classNames[p]} (дұрысы — ${classNames[gold]})`);
 });
 const f1s = labels.map(l => {
   const tp = conf[l][l];
@@ -110,23 +112,23 @@ const f1s = labels.map(l => {
   const prec = tp + fp ? tp / (tp + fp) : 0, rec = tp + fn ? tp / (tp + fn) : 0;
   return { l, prec, rec, f1: prec + rec ? 2 * prec * rec / (prec + rec) : 0 };
 });
-console.log(`Training examples: ${AI.trainSize}, hold-out examples: ${TEST.length}`);
-console.log(`\n1) Classification (5 classes) accuracy: ${pct(ok / TEST.length)}  (${ok}/${TEST.length})`);
-console.log(`   Macro-F1: ${pct(f1s.reduce((s, x) => s + x.f1, 0) / f1s.length)}`);
-f1s.forEach(x => console.log(`   ${x.l.padEnd(10)} precision ${pct(x.prec)}  recall ${pct(x.rec)}  F1 ${pct(x.f1)}`));
-console.log('   Confusion (rows = true, cols = predicted): ' + labels.join(' / '));
-labels.forEach(l => console.log('   ' + l.padEnd(10) + labels.map(p => String(conf[l][p]).padStart(4)).join('')));
-if (misses.length) { console.log('   Errors:'); misses.forEach(x => console.log('     - ' + x)); }
+console.log(`Оқыту мысалдары — ${AI.trainSize}. Алғашқы сынақ жиыны — ${TEST.length} мысал.`);
+console.log(`\n1. Бес санатқа жіктеудің жалпы дәлдігі — ${pct(ok / TEST.length)}  (${ok}/${TEST.length})`);
+console.log(`   Кластар бойынша орташа F1 (macro-F1) — ${pct(f1s.reduce((s, x) => s + x.f1, 0) / f1s.length)}`);
+f1s.forEach(x => console.log(`   ${classNames[x.l].padEnd(10)}  дәлдік ${pct(x.prec)}  толықтық ${pct(x.rec)}  F1 ${pct(x.f1)}`));
+console.log('   Жіктеу матрицасы. Жолда нақты санат, бағанда модель болжамы берілген.\n   Бағандар: ' + labels.map(l => classNames[l]).join(' / '));
+labels.forEach(l => console.log('   ' + classNames[l].padEnd(10) + labels.map(p => String(conf[l][p]).padStart(4)).join('')));
+if (misses.length) { console.log('   Қате мысалдар'); misses.forEach(x => console.log('     - ' + x)); }
 
 let ok2 = 0; const miss2 = [];
-FRESH.forEach(([gold, text]) => { const p = AI.predict(text).label; if (p === gold) ok2++; else miss2.push(`${text}  →  ${p} (керек: ${gold})`); });
-console.log(`\n1b) FRESH hold-out (never used for tuning): accuracy ${pct(ok2 / FRESH.length)}  (${ok2}/${FRESH.length})`);
-if (miss2.length) { console.log('   Errors:'); miss2.forEach(x => console.log('     - ' + x)); }
+FRESH.forEach(([gold, text]) => { const p = AI.predict(text).label; if (p === gold) ok2++; else miss2.push(`${text}  →  ${classNames[p]} (дұрысы — ${classNames[gold]})`); });
+console.log(`\n1.1. Баптау кезінде қолданылмаған бөлек сынақ жиынындағы дәлдік — ${pct(ok2 / FRESH.length)}  (${ok2}/${FRESH.length})`);
+if (miss2.length) { console.log('   Қате мысалдар'); miss2.forEach(x => console.log('     - ' + x)); }
 /* The page auto-fills only when the model is confident; otherwise the person chooses. */
 [0.5, 0.6, 0.7, 0.8].forEach(th => {
   const all = TEST.concat(FRESH); let cov = 0, right = 0;
   all.forEach(([gold, text]) => { const p = AI.predict(text); if (p.prob >= th) { cov++; if (p.label === gold) right++; } });
-  console.log(`   threshold ${th}: auto-filled ${pct(cov / all.length)} of cases, accuracy among them ${pct(right / cov)}`);
+  console.log(`   Сенімділік шегі ${th.toFixed(1).replace('.', ',')} · ${all.length} мысал бойынша қамту — ${pct(cov / all.length)} · шектен өткендердегі дәлдік — ${pct(right / cov)}`);
 });
 
 /* 2. Phrase parsing */
@@ -141,9 +143,9 @@ PHRASES.forEach(([text, gold]) => {
   });
   if (full) all++; else pmiss.push(`${text}  →  ${JSON.stringify({ type: r.type, amount: r.amount, member: r.member, category: r.category })}`);
 });
-console.log(`\n2) Phrase parsing, ${PHRASES.length} phrases:`);
-Object.keys(field).forEach(k => console.log(`   ${k.padEnd(9)} ${pct(field[k] / PHRASES.length)}`));
-console.log(`   all four fields correct: ${pct(all / PHRASES.length)}  (${all}/${PHRASES.length})`);
-if (pmiss.length) { console.log('   Errors:'); pmiss.forEach(x => console.log('     - ' + x)); }
+console.log(`\n2. Сөйлемдерді талдау (${PHRASES.length} сөйлем)`);
+Object.keys(field).forEach(k => console.log(`   ${fieldNames[k].padEnd(10)}  ${pct(field[k] / PHRASES.length)}`));
+console.log(`   Төрт өрісі де дұрыс сөйлемдер — ${pct(all / PHRASES.length)}  (${all}/${PHRASES.length})`);
+if (pmiss.length) { console.log('   Қате мысалдар'); pmiss.forEach(x => console.log('     - ' + x)); }
 
 module.exports = { accuracy: ok / TEST.length };

@@ -746,7 +746,7 @@
       h('span', { class: 'op-meta' },
         isInc ? h('span', { class: 'tag is-income' }, h('i'), 'Кіріс') : h('span', { class: 'tag' }, h('i'), cat.name),
         h('span', { class: 'op-who' }, r.member + ' · ' + whenLabel(new Date(r.createdAt))),
-        r.via ? h('span', { class: 'ai-tag', title: 'Бұл жазбаны ИИ толтырды, адам растады', html: icon('sparkle', 13) + 'ИИ' }) : null),
+        r.via ? h('span', { class: 'ai-tag', title: 'Бұл жазбаны ЖИ толтырды, адам растады', html: icon('sparkle', 13) + 'ЖИ' }) : null),
       h('button', { class: 'icon-btn op-del', type: 'button', title: 'Жою', 'aria-label': 'Жазбаны жою: ' + title + ', ' + fmtNum(r.amount) + ' теңге', html: icon('trash', 18), onclick: function () { askDelete(r); } }));
   }
   function renderNameChips() {
@@ -1310,7 +1310,7 @@
     callAI({ task: 'ask', question: q.slice(0, 300), context: aiContext() }).then(function (r) {
       if (!typing.isConnected) return;
       if (!r || typeof r.answer !== 'string' || !r.answer.trim()) throw new Error('empty');
-      pushMsg(r.answer.trim().slice(0, 1200), 'bot', 'ИИ жауабы · ' + (r.model || 'Gemini') + ' · қателесуі мүмкін', typing);
+      pushMsg(r.answer.trim().slice(0, 1200), 'bot', 'ЖИ жауабы · ' + (r.model || 'Gemini') + ' · қателесуі мүмкін', typing);
     }).catch(function () { if (typing.isConnected) pushMsg(fallback, 'bot', 'Gemini қолжетімсіз · офлайн жауап', typing); });
   }
   function resetChat() {
@@ -1542,7 +1542,7 @@
   });
   function aiSettingsField() {
     if (isFamily()) return h('p', { class: 'dlg-note' }, 'Отбасылық бөлмеде мәтінді осы құрылғыдағы модель талдайды.');
-    if (isDemo()) return h('p', { class: 'dlg-note' }, 'Мысал режимінде ИИ құрылғыда жұмыс істейді. Gemini жеке бюджет параметрлерінде қосылады.');
+    if (isDemo()) return h('p', { class: 'dlg-note' }, 'Мысал режимінде ЖИ құрылғыда жұмыс істейді. Gemini жеке бюджет параметрлерінде қосылады.');
     var input = h('input', { class: 'input', id: 'aiEndpointInput', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', value: aiEndpoint() || AI_DEFAULT_ENDPOINT });
     var status = h('p', { class: 'dlg-note', role: 'status' }, aiEndpoint() ? 'Gemini қосулы.' : 'Қазір құрылғыдағы модель қосулы.');
     var save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Сақтау және тексеру');
@@ -1685,7 +1685,7 @@
       $('quickAction').textContent = text ? rows.length + ' жазбаны тексеру' : 'Мысалды сынау';
       return;
     }
-    $('previewTitle').textContent = text ? 'ИИ ұсынған жазба' : 'Үлгі жазба';
+    $('previewTitle').textContent = text ? 'ЖИ ұсынған жазба' : 'Үлгі жазба';
     $('quickAction').textContent = text ? 'Жазбаны тексеру' : 'Мысалды сынау';
     $('previewAmount').textContent = r.amount && r.amount <= MAX_AMOUNT ? money(r.amount) : '— ₸';
     $('previewMember').textContent = r.member || 'Таңдау қажет';
@@ -1745,7 +1745,7 @@
     $('singleFields').hidden = true; $('batchFields').hidden = false;
     $('aiBox').hidden = true; $('entrySeparator').hidden = true; $('formHint').hidden = true;
     $('batchEditPhrase').setAttribute('aria-expanded', 'false'); $('batchSource').textContent = $('aiText').value.trim();
-    $('formTitle').textContent = 'ИИ ұсынған ' + entries.length + ' жазбаны тексеріңіз';
+    $('formTitle').textContent = 'ЖИ ұсынған ' + entries.length + ' жазбаны тексеріңіз';
     $('batchRows').replaceChildren();
     function select(key, options, value) {
       var el = h('select', { class: 'input', 'data-field': key, required: true },
@@ -1771,7 +1771,7 @@
     });
     appliedPhrase = $('aiText').value.trim(); aiFilledBy = 'local';
     $('submitBtn').textContent = entries.length + ' жазбаны сақтау'; updateBatchTotal();
-    setAiStatus('Құрылғыдағы ИИ ' + entries.length + ' жазбаны бөлді. Әрқайсысын тексеріп, бірге сақтаңыз.');
+    setAiStatus('Құрылғыдағы ЖИ ' + entries.length + ' жазбаны бөлді. Әрқайсысын тексеріп, бірге сақтаңыз.');
     $('entry').scrollTop = 0;
     if (document.activeElement && $('aiBox').contains(document.activeElement)) $('formTitle').focus({ preventScroll: true });
   }
@@ -1807,7 +1807,7 @@
     if (!$('amount').value) missing.push('соманы');
     if (!r.member) missing.push('отбасы мүшесін');
     if (unsure) missing.push('санатты');
-    var who = source === 'gemini' ? 'Gemini' : 'Құрылғыдағы ИИ-модель';
+    var who = source === 'gemini' ? 'Gemini' : 'Құрылғыдағы ЖИ моделі';
     if (r.previous) who += ' (санат бұрынғы жазбадан алынды)';
     if (missing.length) setAiStatus(who + ' толтырды. Енді ' + missing.join(', ') + ' өзіңіз көрсетіңіз.', true);
     else setAiStatus(who + ' толтырды. Тексеріп, «' + $('submitBtn').textContent + '» басыңыз.');
@@ -1897,7 +1897,7 @@
     if (!previous && !sug) { box.hidden = true; return; }
     var c = previous || sug.category;
     box.appendChild(h('span', { html: icon('sparkle', 14), style: 'display:inline-grid;color:var(--accent)' }));
-    box.appendChild(h('span', null, previous ? 'Бұрынғы жазба бойынша' : 'ИИ ұсынысы'));
+    box.appendChild(h('span', null, previous ? 'Бұрынғы жазба бойынша' : 'ЖИ ұсынысы'));
     box.appendChild(h('button', { class: 'chip', type: 'button', style: '--c:' + CATS[c].color, onclick: function () {
       $({ food: 'cFood', transport: 'cTransport', home: 'cHome', other: 'cOther' }[c]).checked = true; clearErr('cat'); aiFilledBy = aiFilledBy || 'local'; renderCatSuggest();
     } }, h('i'), CATS[c].name + (previous ? '' : ' · ' + Math.round(sug.prob * 100) + '%')));
@@ -2247,7 +2247,7 @@
 
   /* ---------- guided tour for presentations ---------- */
   var TOUR = [
-    { id: 'hero', title: 'Бір сөйлемнен жазбаға', text: 'Мысалды сынап көріңіз. ИИ соманы, отбасы мүшесін және санатты ұсынады. Өрістерді өзгертіп, жазбаны мысал бюджетіне сақтай аласыз.' },
+    { id: 'hero', title: 'Бір сөйлемнен жазбаға', text: 'Мысалды сынап көріңіз. ЖИ соманы, отбасы мүшесін және санатты ұсынады. Өрістерді өзгертіп, жазбаны мысал бюджетіне сақтай аласыз.' },
     { id: 'statusCard', title: 'Айдың қорытындысы', text: 'Кіріс, шығыс және қалдық бір жерде. Сақина кірістің қанша пайызы қалғанын көрсетеді. Көрсеткілермен өткен айларды ашуға болады.' },
     { id: 'catCard', title: 'Ақша қайда кетті?', text: 'Шығыс санаттарға бөлінеді. «Лимиттер» арқылы әр санатқа айлық шек қойылады: шығыс оған жақындағанда сайт ескертеді.' },
     { id: 'memCard', title: 'Кім қанша жұмсады?', text: 'Әр отбасы мүшесінің шығысы мен оның жалпы шығыстағы үлесі.' },

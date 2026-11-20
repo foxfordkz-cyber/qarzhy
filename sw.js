@@ -2,7 +2,7 @@
 'use strict';
 const scope = self.registration.scope;
 const prefix = 'otbasy-shell:' + new URL(scope).pathname + ':';
-const cacheName = prefix + '3';
+const cacheName = prefix + '4';
 const shell = ['index.html', 'css/style.css', 'js/ai.js', 'js/budget-query.js', 'js/service-config.js', 'js/family-room.js', 'js/app.js',
   'pilot/index.html', 'pilot/style.css', 'pilot/study.js', 'pilot/app.js'].map(path => new URL(path, scope).href);
 const pilotDir = new URL('pilot/', scope).href;

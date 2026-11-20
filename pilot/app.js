@@ -9,11 +9,11 @@
   var key = 'otbasy-budget:pilot:v1:' + (qa ? 'qa' : 'participant') + ':' + (group || 'random');
   var state = null, clock = null, sending = false;
   var views = ['intro', 'task', 'rest', 'results', 'summary'];
-  var fieldNames = { type: 'вид операции', amount: 'сумму', member: 'имя', category: 'категорию' };
+  var fieldNames = { type: 'Жазба түрін', amount: 'Соманы', member: 'Отбасы мүшесінің атын', category: 'Санатты' };
   var fields = Object.keys(fieldNames);
-  var fmt = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  function seconds(ms) { return fmt.format(ms / 1000) + ' с'; }
-  function modeText(mode) { return mode === 'ai' ? 'С помощью ИИ' : 'Вручную'; }
+  var fmt = new Intl.NumberFormat('kk-KZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  function seconds(ms) { return fmt.format(ms / 1000) + ' секунд'; }
+  function modeText(mode) { return mode === 'ai' ? 'ЖИ көмегімен' : 'Қолмен'; }
   function uuid() {
     if (crypto.randomUUID) return crypto.randomUUID();
     var bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -70,16 +70,16 @@
       var input = field === 'type' || field === 'category' ? $('field-' + field) : $('pilot-' + field);
       if (bad) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
       $('error-' + field).hidden = !bad;
-      $('error-' + field).textContent = bad ? 'Сверьте ' + fieldNames[field] + ' с заданием.' : '';
+      $('error-' + field).textContent = bad ? fieldNames[field] + ' тапсырма шартымен салыстырыңыз.' : '';
     });
   }
   function startClock() { if (clock && !document.hidden) clock.start(); }
   function renderTask(resumed) {
     var item = assignment(), isAI = item.mode === 'ai';
     var n = state.trials.length;
-    $('pilot-progress').textContent = 'Задание ' + (n + 1) + ' из 6';
+    $('pilot-progress').textContent = 'Тапсырма ' + (n + 1) + ' / 6';
     $('pilot-meter').value = n;
-    $('pilot-heading').textContent = isAI ? 'Внесите запись с ИИ' : 'Внесите запись вручную';
+    $('pilot-heading').textContent = isAI ? 'Жазбаны ЖИ көмегімен енгізіңіз' : 'Жазбаны қолмен енгізіңіз';
     $('pilot-scenario').textContent = task()[state.language];
     $('pilot-scenario').lang = state.language;
     $('pilot-scenario').dataset.taskId = item.taskId;
@@ -90,7 +90,7 @@
     $('pilot-composer').hidden = !isAI; $('pilot-record').hidden = isAI;
     $('pilot-model').textContent = ''; $('pilot-feedback').textContent = '';
     if (resumed) {
-      (isAI ? $('pilot-model') : $('pilot-feedback')).textContent = 'Вы вернулись к заданию. Ранее затраченное время учтено.';
+      (isAI ? $('pilot-model') : $('pilot-feedback')).textContent = 'Тапсырманы жалғастыра аласыз. Бұған дейін жұмсаған уақытыңыз есепке алынды.';
     }
     setErrors([]);
     show('task', 'pilot-heading');
@@ -104,12 +104,12 @@
   }
   function renderRest() {
     var n = state.trials.length, next = assignment();
-    $('pilot-rest-count').textContent = 'Готово ' + n + ' из 6. Следующее задание — ' + (next.mode === 'ai' ? 'с помощью ИИ.' : 'ручной ввод.');
+    $('pilot-rest-count').textContent = 'Орындалғаны ' + n + ' / 6. Келесі жазбаны ' + (next.mode === 'ai' ? 'ЖИ көмегімен енгізесіз.' : 'қолмен енгізесіз.');
     show('rest', 'rest-title');
   }
   function startStudy() {
     if (!window.OtbasyAI || typeof OtbasyAI.parsePhrase !== 'function') {
-      $('pilot-start').textContent = 'Модель не загрузилась. Обновите страницу.'; return;
+      $('pilot-start').textContent = 'Модель жүктелмеді. Бетті жаңартыңыз.'; return;
     }
     var first = group ? group === 'A' : Math.random() < 0.5;
     var order = first ? 'manual-first' : 'ai-first';
@@ -121,7 +121,7 @@
     ev.preventDefault();
     if (!state || state.stage !== 'task' || assignment().mode !== 'ai') return;
     var input = $('pilot-phrase'), phrase = input.value.trim();
-    if (!phrase) { $('pilot-model').textContent = 'Сначала введите фразу.'; input.focus(); return; }
+    if (!phrase) { $('pilot-model').textContent = 'Алдымен сөйлем жазыңыз.'; input.focus(); return; }
     var parsed = OtbasyAI.parsePhrase(phrase, study.MEMBERS);
     if (state.current.initialCorrections === null) state.current.initialCorrections = study.differingFields(parsed, task().gold).length;
     setChoice('type', parsed.type);
@@ -129,7 +129,7 @@
     $('pilot-member').value = parsed.member || '';
     setChoice('category', parsed.category); syncType();
     setErrors([]); $('pilot-feedback').textContent = '';
-    $('pilot-model').textContent = 'Проверьте предложенные поля и дополните пропущенные.';
+    $('pilot-model').textContent = 'Ұсынылған мәндерді тексеріп, бос өрістерді толтырыңыз.';
     $('pilot-record').hidden = false;
     save();
   }
@@ -143,7 +143,7 @@
     setErrors(errors);
     if (errors.length) {
       state.current.wrongAttempts++;
-      $('pilot-feedback').textContent = 'Запись пока отличается от условия. Исправьте отмеченные поля.';
+      $('pilot-feedback').textContent = 'Жазба тапсырма шартына сәйкес келмейді. Белгіленген өрістерді түзетіңіз.';
       var field = errors[0];
       var focus = field === 'type' || field === 'category' ? $('field-' + field).querySelector('input') : $('pilot-' + field);
       focus.focus(); save(); return;
@@ -180,9 +180,9 @@
     var manual = study.summarize(state.trials, 'manual'), ai = study.summarize(state.trials, 'ai');
     $('pilot-manual-time').textContent = seconds(manual.medianMs);
     $('pilot-ai-time').textContent = seconds(ai.medianMs);
-    $('pilot-manual-errors').textContent = 'Неудачных подтверждений — ' + manual.wrongAttempts;
-    $('pilot-ai-errors').textContent = 'Неудачных подтверждений — ' + ai.wrongAttempts;
-    $('pilot-corrections').textContent = 'Полей, в которых первое предложение ИИ отличалось от верной записи, — ' + ai.correctedFields + ' из 12.';
+    $('pilot-manual-errors').textContent = 'Сәтсіз растаулар саны — ' + manual.wrongAttempts;
+    $('pilot-ai-errors').textContent = 'Сәтсіз растаулар саны — ' + ai.wrongAttempts;
+    $('pilot-corrections').textContent = 'ЖИ алғаш ұсынған 12 өрістің ' + ai.correctedFields + ' өрісін түзету қажет болды.';
     var list = $('pilot-measurements'); list.replaceChildren();
     state.trials.forEach(function (trial) {
       var row = document.createElement('li');
@@ -190,8 +190,8 @@
       list.appendChild(row);
     });
     $('pilot-consent').checked = state.submitted;
-    $('pilot-send-status').textContent = state.submitted ? 'Отчёт отправлен.' : qa ? 'Это технический прогон.' :
-      !api('/v1/pilot/results') ? 'Сервис приёма пока недоступен. Можно скачать отчёт или скопировать его.' : '';
+    $('pilot-send-status').textContent = state.submitted ? 'Есеп жіберілді.' : qa ? 'Бұл — техникалық тексеріс.' :
+      !api('/v1/pilot/results') ? 'Қазір есепті жіберу мүмкін емес. Оны жүктеп алуға немесе көшіруге болады.' : '';
     updateSend(); show('results', 'results-title');
   }
   async function request(url, options) {
@@ -206,11 +206,11 @@
   async function submitReport() {
     var url = api('/v1/pilot/results');
     if (!state || state.stage !== 'results' || state.submitted || qa || sending || !$('pilot-consent').checked || !url) return;
-    sending = true; updateSend(); $('pilot-send-status').textContent = 'Отправляем отчёт…';
+    sending = true; updateSend(); $('pilot-send-status').textContent = 'Есеп жіберіліп жатыр…';
     try {
       await request(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(report()) });
-      state.submitted = true; save(); $('pilot-send-status').textContent = 'Отчёт отправлен.';
-    } catch (e) { $('pilot-send-status').textContent = 'Подтверждение не получено. Можно повторить отправку или сохранить отчёт.'; }
+      state.submitted = true; save(); $('pilot-send-status').textContent = 'Есеп жіберілді.';
+    } catch (e) { $('pilot-send-status').textContent = 'Есептің қабылданғаны расталмады. Қайта жіберіңіз немесе есепті сақтаңыз.'; }
     finally { sending = false; updateSend(); }
   }
   function exportText() {
@@ -222,11 +222,11 @@
     var text = exportText();
     try {
       await navigator.clipboard.writeText(text);
-      $('pilot-export-status').textContent = 'Отчёт скопирован.';
+      $('pilot-export-status').textContent = 'Есеп көшірілді.';
     } catch (e) {
       $('pilot-export').hidden = false; $('pilot-export').value = text;
       $('pilot-export').focus(); $('pilot-export').select();
-      $('pilot-export-status').textContent = 'Выделенный текст можно скопировать вручную.';
+      $('pilot-export-status').textContent = 'Белгіленген мәтінді қолмен көшіруге болады.';
     }
   }
   function downloadReport() {
@@ -239,36 +239,36 @@
   async function loadSummary() {
     var url = api('/v1/pilot/summary'), status = $('summary-status');
     $('summary-data').hidden = true;
-    if (!url) { status.textContent = 'Сервис результатов пока недоступен.'; return; }
+    if (!url) { status.textContent = 'Нәтижелер сервисі қазір қолжетімсіз.'; return; }
     $('summary-refresh').disabled = true;
-    status.textContent = 'Загружаем результаты…';
+    status.textContent = 'Нәтижелер жүктеліп жатыр…';
     try {
       var summary = await (await request(url)).json();
       if (!summary || !Number.isSafeInteger(summary.sessions) || summary.sessions < 0 || !summary.orders) throw new Error('invalid response');
       var counts = [summary.manualWrongAttempts, summary.aiWrongAttempts, summary.aiCorrectedFields, summary.orders['manual-first'], summary.orders['ai-first']];
       if (!counts.every(v => Number.isSafeInteger(v) && v >= 0)) throw new Error('invalid counts');
       if (summary.sessions > 0 && ![summary.manualMedianMs, summary.aiMedianMs].every(v => Number.isFinite(v) && v >= 0)) throw new Error('invalid duration');
-      $('summary-count').textContent = 'Завершённых прохождений с отправленным отчётом — ' + summary.sessions + '.';
+      $('summary-count').textContent = 'Нәтижесі жіберілген сынақтар саны — ' + summary.sessions + '.';
       $('summary-measures').hidden = summary.sessions === 0;
       if (summary.sessions) {
         $('summary-manual').textContent = seconds(summary.manualMedianMs); $('summary-ai').textContent = seconds(summary.aiMedianMs);
-        $('summary-manual-errors').textContent = 'Неудачных подтверждений — ' + summary.manualWrongAttempts;
-        $('summary-ai-errors').textContent = 'Неудачных подтверждений — ' + summary.aiWrongAttempts;
-        $('summary-corrections').textContent = 'Полей с расхождениями в первом предложении ИИ за все прохождения — ' + summary.aiCorrectedFields + '.';
-        $('summary-orders').textContent = 'Начинали с ручного ввода — ' + summary.orders['manual-first'] + ', с ИИ — ' + summary.orders['ai-first'] + '.';
+        $('summary-manual-errors').textContent = 'Сәтсіз растаулар саны — ' + summary.manualWrongAttempts;
+        $('summary-ai-errors').textContent = 'Сәтсіз растаулар саны — ' + summary.aiWrongAttempts;
+        $('summary-corrections').textContent = 'Барлық сынақта ЖИ алғаш ұсынған жазбаларда түзетуді қажет еткен өрістер саны — ' + summary.aiCorrectedFields + '.';
+        $('summary-orders').textContent = 'Қолмен енгізуден басталған сынақтар — ' + summary.orders['manual-first'] + ', ЖИ-ден басталғаны — ' + summary.orders['ai-first'] + '.';
       }
       $('summary-data').hidden = false; status.textContent = '';
-    } catch (e) { status.textContent = 'Не удалось загрузить сводку. Проверьте соединение и обновите результаты.'; }
+    } catch (e) { status.textContent = 'Нәтижелер жүктелмеді. Интернет байланысын тексеріп, бетті жаңартыңыз.'; }
     finally { $('summary-refresh').disabled = false; }
   }
   $('pilot-qa').hidden = !qa;
   $('summary-invite').addEventListener('click', async function () {
-    var message = 'Поможете проверить семейный бюджет Otbasy Budget? Внесите шесть учебных операций — три вручную и три с ИИ. В конце вы увидите своё время и сможете отправить анонимный результат команде. ' + new URL('./', location.href).href;
+    var message = '«Отбасы бюджеті» қосымшасын сынап көріңіз. Алты оқу жазбасының үшеуін қолмен, үшеуін ЖИ көмегімен енгізесіз. Соңында жұмсаған уақытыңызды көресіз. Қаласаңыз, анонимді нәтижені жоба тобына жібере аласыз. ' + new URL('./', location.href).href;
     try {
-      await navigator.clipboard.writeText(message); $('summary-invite-status').textContent = 'Приглашение скопировано.';
+      await navigator.clipboard.writeText(message); $('summary-invite-status').textContent = 'Шақыру мәтіні көшірілді.';
     } catch (e) {
       var box = $('summary-invite-text'); box.hidden = false; box.value = message; box.focus(); box.select();
-      $('summary-invite-status').textContent = 'Текст выделен. Скопируйте его и отправьте участнику.';
+      $('summary-invite-status').textContent = 'Мәтін белгіленді. Оны көшіріп, қатысушыға жіберіңіз.';
     }
   });
   $('summary-refresh').addEventListener('click', loadSummary);
