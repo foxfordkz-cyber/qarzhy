@@ -289,6 +289,8 @@
     demoReminders: [],
     editingId: null,
     histType: 'all',
+    histScope: null,
+    demoEntryId: null,
     bellSeen: ''
   };
   function isDemo() { return state.mode === 'demo'; }
@@ -363,6 +365,7 @@
     renderTrend();
     renderHistory();
     renderNameChips();
+    renderQuickPreview();
     renderGoal(cs);
     renderScenario(s);
     renderAchievements(cs);
@@ -649,11 +652,18 @@
     box.textContent = '';
     var q = lower(state.query.trim());
     var all = records().slice().sort(function (a, b) { return Date.parse(b.createdAt) - Date.parse(a.createdAt); });
-    var list = all.filter(function (r) { return (state.histType === 'all' || r.type === state.histType) && matches(r, q); });
+    var scope = state.histScope;
+    var list = all.filter(function (r) { return (!scope || inScope(r, scope)) && (state.histType === 'all' || r.type === state.histType) && matches(r, q); });
+    var demoEntry = state.demoEntryId && isDemo() && all.find(function (r) { return r.id === state.demoEntryId; });
+    $('demoFollowup').hidden = !demoEntry || !!scope || !!q || state.histType !== 'all';
+    if (demoEntry) {
+      var key = monthKey(new Date(demoEntry.createdAt));
+      $('demoBalance').textContent = demoEntry.member + ' · ' + money(demoEntry.amount) + ' · ' + monthTitle(key) + ' · Қалдық ' + money(summarize(key).bal);
+    }
     $('histType').hidden = !all.length;
     $('histCount').textContent = list.length;
-    $('filterPill').hidden = !q;
-    if (q) $('filterText').textContent = '«' + state.query.trim() + '» · ' + list.length + ' жазба';
+    $('filterPill').hidden = !q && !scope;
+    if (q || scope) $('filterText').textContent = (scope ? scopeLabel(scope) : '«' + state.query.trim() + '»') + ' · ' + list.length + ' жазба';
     if (!all.length) {
       box.appendChild(emptyState('list', 'Әзірге жазба жоқ', 'Алғашқы кірісті немесе шығысты қосыңыз. Сайттың қалай жұмыс істейтінін көру үшін мысалды ашыңыз.',
         h('div', { class: 'chips' },
@@ -663,7 +673,7 @@
       return;
     }
     if (!list.length) {
-      box.appendChild(q ? emptyState('search', 'Ештеңе табылмады', 'Басқа сөзбен іздеп көріңіз: есім, санат немесе сипаттама.')
+      box.appendChild(q || scope ? emptyState('search', 'Ештеңе табылмады', 'Іздеу шарттарын өзгертіп көріңіз.')
         : emptyState('list', state.histType === 'income' ? 'Кіріс әлі жазылмаған' : 'Шығыс әлі жазылмаған', null));
       $('moreBtn').hidden = true; return;
     }
@@ -1137,38 +1147,85 @@
   });
 
   /* ---------- assistant: rule-based answers, works without a server ---------- */
-  var SUGS = ['Жинағымды қалай көбейтемін?', 'Өткен аймен салыстыршы', 'Лимиттерім қалай?', 'Қаржылық қауіпсіздік туралы айтшы'];
+  var SUGS = ['Азық-түлікке қанша жұмсадық?', 'Кім ең көп жұмсады?', 'Өткен аймен салыстыршы', 'Лимиттерім қалай?'];
+  var RU_CATS = { food: 'Продукты', transport: 'Транспорт', home: 'Жильё', other: 'Прочее' };
+  function inScope(record, scope) {
+    return monthKey(new Date(record.createdAt)) === scope.month &&
+      (!scope.type || record.type === scope.type) &&
+      (!scope.member || lower(record.member) === lower(scope.member)) &&
+      (!scope.category || record.category === scope.category) &&
+      (!scope.note || lower(record.note || '').includes(lower(scope.note)));
+  }
+  function scopeLabel(scope, ru) {
+    var period = ru ? keyDate(scope.month).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }) : monthTitle(scope.month);
+    return [period, scope.member, scope.category && (ru ? RU_CATS[scope.category] : CATS[scope.category].name), scope.note && '«' + scope.note + '»'].filter(Boolean).join(' · ');
+  }
+  function budgetQuestion(q) {
+    var query = BudgetQuery.parse(q, knownNames(), state.viewMonth, nowKey());
+    if (!query) return null;
+    var ru = query.ru, scope = query.scope;
+    if (query.prompt === 'period') return { text: ru ? 'Я могу посчитать за месяц. Выберите его стрелками над балансом и повторите вопрос без даты.' : 'Бір ай бойынша есептей аламын. Қалдықтың үстіндегі көрсеткілермен айды таңдап, сұрақты күнсіз қайталаңыз.' };
+    if (query.prompt === 'scope') return { text: ru ? 'Укажите одно имя из истории, категорию или часть описания в кавычках. Например, «Сколько потратили на транспорт?»' : 'Тарихтағы бір есімді, санатты немесе тырнақша ішіндегі сипаттаманы көрсетіңіз. Мысалы, «Көлікке қанша жұмсадық?»' };
+    var entries = records().filter(function (r) { return inScope(r, scope); });
+    var label = scopeLabel(scope, ru);
+    if (!entries.length) return { text: label + '\n' + (ru ? 'Подходящих записей за месяц нет.' : 'Осы айда сәйкес жазба жоқ.') };
+    if (query.rank) {
+      var totals = new Map();
+      entries.forEach(function (r) {
+        var k = query.rank === 'member' ? lower(r.member) : r.category;
+        totals.set(k, (totals.get(k) || 0) + r.amount);
+      });
+      var highest = Math.max.apply(null, Array.from(totals.values()));
+      var winners = Array.from(totals.keys()).filter(function (k) { return totals.get(k) === highest; });
+      var names = winners.map(function (k) {
+        return query.rank === 'member' ? entries.find(function (r) { return lower(r.member) === k; }).member : (ru ? RU_CATS[k] : CATS[k].name);
+      });
+      if (winners.length === 1) {
+        scope[query.rank] = query.rank === 'member' ? names[0] : winners[0];
+        entries = entries.filter(function (r) { return inScope(r, scope); });
+      }
+      return { text: label + '\n' + names.join(', ') + ' · ' + money(highest) + (winners.length > 1 ? (ru ? ' у каждого.' : ' әрқайсысында.') : '.'),
+        scope: winners.length === 1 ? scope : null, count: entries.length, ru: ru };
+    }
+    var inc = 0, exp = 0;
+    entries.forEach(function (r) { if (r.type === 'income') inc += r.amount; else exp += r.amount; });
+    var total;
+    if (scope.type === 'income') total = (ru ? 'Доход' : 'Кіріс') + ' — ' + money(inc);
+    else if (scope.type === 'expense') total = (ru ? 'Расходы' : 'Шығыс') + ' — ' + money(exp);
+    else total = (ru ? 'Доход' : 'Кіріс') + ' ' + money(inc) + ', ' + (ru ? 'расходы' : 'шығыс') + ' ' + money(exp) + '.\n' + (ru ? 'Остаток' : 'Қалдық') + ' — ' + money(inc - exp);
+    return { text: label + '\n' + total + '.', scope: scope, count: entries.length, ru: ru };
+  }
   function change(a, b) {
     if (!a) return b ? ' (өткен айда жоқ)' : '';
     var p = Math.round(Math.abs(b - a) / a * 100);
     return b > a ? ' (' + p + '%-ға өсті)' : b < a ? ' (' + p + '%-ға азайды)' : ' (өзгеріс жоқ)';
   }
   function compareMonths() {
-    var s = summarize(), p = summarize(nowKey() - 1), prevName = lower(MONTHS[keyDate(nowKey() - 1).getMonth()]);
+    var s = summarize(state.viewMonth), p = summarize(state.viewMonth - 1), prevName = monthTitle(state.viewMonth - 1);
     if (!p.inc && !p.exp) return 'Өткен айда (' + prevName + ') жазба жоқ, сондықтан салыстыру мүмкін емес.';
-    var lines = ['Осы ай мен ' + prevName + ' айын салыстырсақ:',
+    var lines = [prevName + ' → ' + monthTitle(state.viewMonth),
       'Кіріс: ' + money(p.inc) + ' → ' + money(s.inc) + change(p.inc, s.inc),
       'Шығыс: ' + money(p.exp) + ' → ' + money(s.exp) + change(p.exp, s.exp)];
     var big = CAT_ORDER.map(function (k) { return { k: k, d: s.byCat[k] - p.byCat[k] }; }).sort(function (a, b) { return Math.abs(b.d) - Math.abs(a.d); })[0];
     if (big && big.d) lines.push('Ең көп өзгерген санат — ' + CATS[big.k].name + ': ' + (big.d > 0 ? '+' : '−') + money(Math.abs(big.d)) + '.');
-    if (new Date().getDate() < 20) lines.push('Ай әлі аяқталған жоқ, сандар өзгеруі мүмкін.');
+    if (state.viewMonth === nowKey()) lines.push('Ағымдағы айдың есебі бүгінге дейінгі жазбаларды қамтиды.');
     return lines.join('\n');
   }
   function limitsAnswer() {
-    var lims = limits(), s = summarize(), ks = CAT_ORDER.filter(function (k) { return lims[k]; });
+    var lims = limits(), s = summarize(state.viewMonth), ks = CAT_ORDER.filter(function (k) { return lims[k]; });
     if (!ks.length) return 'Лимит әлі қойылмаған. «Ақша қайда кетті?» бөлігіндегі «Лимиттер» батырмасын басып, әр санатқа айлық шек қойыңыз. Шығыс 80%-ға жеткенде ескертемін.';
-    return 'Осы айдағы лимиттер:\n' + ks.map(function (k) {
+    return monthTitle(state.viewMonth) + ' · Лимиттер\n' + ks.map(function (k) {
       var p = Math.round(s.byCat[k] / lims[k] * 100);
       return CATS[k].name + ': ' + money(s.byCat[k]) + ' / ' + money(lims[k]) + ' — ' + p + '%' + (p > 100 ? ', асып кетті!' : p >= 80 ? ', жақындап қалды' : '');
     }).join('\n');
   }
   function answer(q) {
-    var t = lower(q), s = summarize();
+    var t = lower(q), s = summarize(state.viewMonth);
     var top = s.exp ? CATS[s.topCat].name + ' (' + money(s.byCat[s.topCat]) + ', шығыстың ' + pct(s.byCat[s.topCat], s.exp) + '%-ы)' : null;
     if (/несие|кредит|қарыз/.test(t)) return 'Негізгі айырмашылық — мөлшерлеме. Несиенің СЖТМ-і әдетте депозит табысынан жоғары, сондықтан шұғыл қажеттілік болмаса, алдымен жинаған тиімді.\nНесие алсаңыз, ай сайынғы төлем кірістің үштен бірінен аспағаны жөн. Оны «Несие калькуляторымен» есептеп көріңіз.';
     if (/қауіп|алаяқ|код|карта|сілтеме/.test(t)) { setFlag('safety'); return 'Үш басты ереже:\n1) SMS-кодты, CVV мен PIN-кодты ешкімге айтпаңыз, банк қызметкеріне де.\n2) Бейтаныс сілтемені ашпаңыз, қосымшаны тек ресми дүкеннен орнатыңыз.\n3) Күмәндансаңыз, қоңырауды үзіп, банктің ресми нөміріне өзіңіз хабарласыңыз.'; }
     if (/лимит|шек/.test(t)) return limitsAnswer();
-    if (/өткен|салыстыр|алдыңғы|динамика/.test(t)) return compareMonths();
+    if (/өткен|салыстыр|алдыңғы|сравни|динамика/.test(t)) return compareMonths();
     if (/жина|үнем|көбейт/.test(t)) {
       return (s.inc ? 'Бұл айда кірістің ' + (s.share > 0 ? pct(s.bal, s.inc) : 0) + '%-ы қалды. ' : '') +
         'Жинақты көбейтудің үш жолы:\n1) Айлық түскен күні оның 10–20%-ын бірден бөлек шотқа салыңыз.\n2) Ең үлкен санатты қараңыз' + (top ? ': қазір бұл — ' + top : '') + '.\n3) Ұсақ шығыстарды аптасына бір рет тексеріп отырыңыз.';
@@ -1178,35 +1235,48 @@
     if (/сәлем|салем/.test(t)) return 'Сәлеметсіз бе! Жинақ, несие, қауіпсіздік немесе айдың шығыстары туралы сұраңыз.';
     return 'Мен әзірге бета-нұсқадамын және мына тақырыптарда жауап беремін: жинақ, несие, қаржылық қауіпсіздік, айдың шығыстары мен қалдығы, лимиттер, өткен аймен салыстыру.';
   }
-  function pushMsg(text, who, src) {
+  function pushMsg(text, who, src, replace) {
     var c = $('chat'), m = h('div', { class: 'msg ' + who }, text, src ? h('span', { class: 'msg-src' }, src) : null);
-    c.appendChild(m); c.scrollTop = c.scrollHeight; return m;
+    if (replace) replace.replaceWith(m); else c.appendChild(m);
+    c.scrollTop = c.scrollHeight; return m;
   }
   function aiContext() {
-    var s = summarize(), g = goal();
+    var s = summarize(state.viewMonth), g = goal();
     return {
-      month: MONTHS[new Date().getMonth()] + ' ' + new Date().getFullYear(),
+      month: monthTitle(state.viewMonth),
       income: s.inc, expense: s.exp, balance: s.bal,
       byCategory: { 'Азық-түлік': s.byCat.food, 'Көлік': s.byCat.transport, 'Үй': s.byCat.home, 'Басқа': s.byCat.other },
-      members: s.members.map(function (m) { return { name: m.name, spent: m.sum }; }),
       allTimeSaved: Math.max(0, s.allBal),
-      goal: g ? { name: g.name, target: g.target } : null
+      goalTarget: g ? g.target : null
     };
   }
   function ask(q) {
     q = q.trim(); if (!q) return;
     pushMsg(q, 'me');
+    var budget = budgetQuestion(q);
+    if (budget) {
+      var message = pushMsg(budget.text, 'bot', budget.scope ? 'Офлайн · бюджет жазбалары бойынша есеп' : 'Офлайн · жергілікті көмекші');
+      if (budget.scope) message.appendChild(h('button', { type: 'button', class: 'link', onclick: function () {
+        showHistoryScope(budget.scope);
+      } }, (budget.ru ? 'Показать записи' : 'Жазбаларды көру') + ' (' + budget.count + ')', h('span', { html: icon('arrow', 14) })));
+      $('chat').scrollTop = $('chat').scrollHeight;
+      return;
+    }
+    if (!aiEndpoint()) { pushMsg(answer(q), 'bot', 'Офлайн көмекші · дайын жауап'); return; }
     var typing = pushMsg('Жазып жатыр…', 'bot typing');
-    var offline = function (why) { typing.remove(); pushMsg(answer(q), 'bot', why); };
-    if (!aiEndpoint()) { setTimeout(function () { offline('Офлайн көмекші · дайын жауаптар'); }, 450); return; }
+    var fallback = answer(q);
     callAI({ task: 'ask', question: q.slice(0, 300), context: aiContext() }, 12000).then(function (r) {
+      if (!typing.isConnected) return;
       if (!r || typeof r.answer !== 'string' || !r.answer.trim()) throw new Error('empty');
-      typing.remove();
-      pushMsg(r.answer.trim().slice(0, 1200), 'bot', 'ИИ жауабы · ' + (r.model || 'Gemini') + ' · қателесуі мүмкін');
-    }).catch(function () { offline('Gemini қолжетімсіз, офлайн жауап'); });
+      pushMsg(r.answer.trim().slice(0, 1200), 'bot', 'ИИ жауабы · ' + (r.model || 'Gemini') + ' · қателесуі мүмкін', typing);
+    }).catch(function () { if (typing.isConnected) pushMsg(fallback, 'bot', 'Gemini қолжетімсіз · офлайн жауап', typing); });
+  }
+  function resetChat() {
+    $('chat').textContent = ''; $('chatInput').value = '';
+    pushMsg(isDemo() ? 'Мысал отбасының бюджеті ашық. Бір адамның немесе бір санаттың шығысын сұрап көріңіз.' : 'Сәлем! Отбасыңыздың бір айдағы кірісі мен шығысы туралы сұраңыз.', 'bot');
   }
   function initChat() {
-    pushMsg('Сәлем! Қандай сұрағыңыз бар?', 'bot');
+    resetChat();
     SUGS.forEach(function (q) { $('sugs').appendChild(h('button', { class: 'sug', type: 'button', onclick: function () { ask(q); } }, q)); });
     $('chatForm').addEventListener('submit', function (e) { e.preventDefault(); var v = $('chatInput').value; $('chatInput').value = ''; ask(v); });
   }
@@ -1236,7 +1306,7 @@
       if (!confirmStep) { confirmStep = true; wipe.className = 'btn btn-danger'; wipe.textContent = 'Иә, бәрін өшіру'; return; }
       state.personal = []; state.goal = null; state.flags = {}; state.limits = {}; state.reminders = [];
       try { [KEY, GOAL_KEY, FLAGS_KEY, LIMITS_KEY, REM_KEY].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
-      panel.close(); render(); toast('Барлық жазбалар өшірілді');
+      resetView(); resetForm(); resetChat(); panel.close(); render(); toast('Барлық жазбалар өшірілді');
     });
     function dataBtn(ic, label, fn, off) {
       return h('button', { class: 'btn btn-ghost', type: 'button', disabled: off ? true : null, onclick: fn }, h('span', { html: icon(ic, 18), style: 'display:inline-grid' }), label);
@@ -1289,7 +1359,9 @@
     var have = {};
     state.personal.forEach(function (r) { have[r.id] = true; });
     var added = data.records.filter(function (r) { return isValid(r) && !have[r.id]; }).map(function (r) {
-      return { id: r.id, type: r.type, amount: Math.min(Math.round(r.amount), MAX_AMOUNT), member: r.member.slice(0, 24), note: String(r.note || '').slice(0, 60), category: r.type === 'expense' ? r.category : null, createdAt: new Date(r.createdAt).toISOString() };
+      var imported = { id: r.id, type: r.type, amount: Math.min(Math.round(r.amount), MAX_AMOUNT), member: r.member.slice(0, 24), note: String(r.note || '').slice(0, 60), category: r.type === 'expense' ? r.category : null, createdAt: new Date(r.createdAt).toISOString() };
+      if (r.via === 'local' || r.via === 'gemini') imported.via = r.via;
+      return imported;
     });
     state.personal = state.personal.concat(added);
     writeJSON(KEY, state.personal);
@@ -1322,28 +1394,40 @@
     rd.readAsText(file);
   });
   function aiSettingsField() {
-    var input = h('input', { class: 'input', id: 'aiEndpointInput', placeholder: 'https://script.google.com/macros/s/…/exec', value: aiEndpoint() || '' });
-    var status = h('p', { class: 'dlg-note' }, aiEndpoint() ? 'Gemini қосулы. Жоқ болса, құрылғыдағы модель жұмыс істейді.' : 'Gemini қосылмаған: фразаларды құрылғыдағы ИИ-модель талдайды.');
+    if (isDemo()) return h('p', { class: 'dlg-note' }, 'Мысал режимінде ИИ құрылғыда жұмыс істейді. Gemini жеке бюджет параметрлерінде қосылады.');
+    var input = h('input', { class: 'input', id: 'aiEndpointInput', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', value: aiEndpoint() || AI_DEFAULT_ENDPOINT });
+    var status = h('p', { class: 'dlg-note', role: 'status' }, aiEndpoint() ? 'Gemini қосулы.' : 'Қазір құрылғыдағы модель қосулы.');
     var save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Сақтау және тексеру');
     save.addEventListener('click', function () {
       var v = input.value.trim();
-      try { if (v) localStorage.setItem(AI_EP_KEY, v); else localStorage.removeItem(AI_EP_KEY); } catch (e) {}
-      if (!v) { status.textContent = 'Gemini өшірілді.'; renderAiMode(); return; }
+      if (!v) {
+        try { localStorage.removeItem(AI_EP_KEY); } catch (e) { status.textContent = 'Браузер параметрді өзгерте алмады.'; return; }
+        status.textContent = 'Құрылғыдағы модель қосулы.'; renderAiMode(); return;
+      }
+      if (!validEndpoint(v)) { status.textContent = 'Проксидің толық HTTPS мекенжайын енгізіңіз. Apps Script сілтемесі /exec деп аяқталады.'; return; }
+      save.disabled = true; input.disabled = true;
       status.textContent = 'Тексеріп жатырмыз…';
-      callAI({ task: 'ping' }, 10000).then(function (r) {
-        status.textContent = r && r.ok ? 'Байланыс бар: ' + (r.model || 'Gemini') : 'Жауап келді, бірақ қате: ' + (r && r.error || 'белгісіз');
+      callAI({ task: 'ping' }, 12000, v).then(function (r) {
+        if (!r || !r.ok) throw new Error('unavailable');
+        if (!status.isConnected || !panel.open) return;
+        try { localStorage.setItem(AI_EP_KEY, v); } catch (e) { status.textContent = 'Браузер параметрді сақтай алмады.'; return; }
+        status.textContent = 'Проксимен байланыс бар · ' + (r.model || 'Gemini');
         renderAiMode();
-      }).catch(function () { status.textContent = 'Байланыс жоқ. Сілтемені және Apps Script жариялау параметрлерін тексеріңіз.'; renderAiMode(); });
+      }).catch(function () { status.textContent = 'Қосылу сәтсіз. Прокси сілтемесін, модель мен сервердегі API кілтін тексеріңіз.'; })
+        .finally(function () { save.disabled = false; input.disabled = false; });
     });
-    return h('div', { class: 'field' }, h('label', { class: 'lbl', for: 'aiEndpointInput' }, 'Жасанды интеллект (Gemini)'), input, save, status);
+    return h('div', { class: 'field' }, h('label', { class: 'lbl', for: 'aiEndpointInput' }, 'Жасанды интеллект (Gemini)'),
+      h('p', { class: 'dlg-note' }, 'Қоссаңыз, енгізген сөйлеміңіз немесе сұрағыңыз бен бюджет қорытындылары осы прокси арқылы Google-ға жіберіледі. Өшіру үшін сілтемені өшіріп, сақтаңыз.'), input, save, status);
   }
   function renderAiMode() {
-    $('aiMode').textContent = aiEndpoint() ? 'Жауаптарды Gemini жасайды · қателесуі мүмкін' : 'Офлайн режим: дайын жауаптар. Gemini Параметрлерде қосылады';
+    var cloud = !!aiEndpoint();
+    $('aiMode').textContent = cloud ? 'Бюджет есебі құрылғыда жасалады. Басқа сұрақтарға Gemini жауап береді.' : 'Офлайн · Сомалар бюджет жазбаларынан есептеледі.';
+    $('entryMode').textContent = (cloud ? 'Сөйлем Gemini проксиіне жіберіледі.' : 'Мәтінді құрылғыдағы модель талдайды.') + ' Сақтар алдында өрістерді тексеріңіз.';
   }
 
   function openHelp() {
     var faq = [
-      ['Деректерім қайда сақталады?', 'Тек осы құрылғының браузерінде. Сайт оларды ешқайда жібермейді. Басқа телефоннан не компьютерден ашсаңыз, жазбалар көрінбейді.'],
+      ['Деректерім қайда сақталады?', 'Жазбалар осы браузерде сақталады. Мәтінді жергілікті ИИ құрылғыда талдайды. Gemini қосылса, енгізген мәтін мен бюджет қорытындылары прокси арқылы Google-ға беріледі. Дауысты тану браузердің қызметіне байланысты.'],
       ['Жазбаны қалай қосамын?', '«Жазба қосу» батырмасын басып, соманы, отбасы мүшесін және санатты таңдаңыз. Күні бүгінгі болып қойылады, қажет болса өткен күнді таңдаңыз.'],
       ['Қате жазбаны қалай түзетемін не өшіремін?', 'Түзету үшін операциялар тарихында жазбаның өзін басыңыз. Өшіру үшін оң жақтағы қоқыс жәшігі белгісін басып, жоюды растаңыз.'],
       ['Өткен айды қалай көремін?', '«Біздің қаржылық жағдайымыз» бөлігіндегі көрсеткілерді басыңыз немесе «Айлық динамика» графигінде айды таңдаңыз.'],
@@ -1359,9 +1443,18 @@
   /* ---------- AI: Gemini through the family's Apps Script proxy, on-device model as fallback ---------- */
   var AI_EP_KEY = 'otbasy-budget:v1:ai-endpoint';
   var AI_DEFAULT_ENDPOINT = '';
-  function aiEndpoint() { try { return localStorage.getItem(AI_EP_KEY) || AI_DEFAULT_ENDPOINT; } catch (e) { return AI_DEFAULT_ENDPOINT; } }
-  function callAI(payload, ms) {
-    var ep = aiEndpoint();
+  function validEndpoint(value) {
+    try {
+      var url = new URL(value);
+      return url.protocol === 'https:' && !url.username && !url.password && (url.hostname !== 'script.google.com' || url.pathname.endsWith('/exec'));
+    } catch (e) { return false; }
+  }
+  function aiEndpoint() {
+    if (isDemo()) return '';
+    try { var value = localStorage.getItem(AI_EP_KEY); return validEndpoint(value) ? value : ''; } catch (e) { return ''; }
+  }
+  function callAI(payload, ms, candidate) {
+    var ep = candidate || aiEndpoint();
     if (!ep) return Promise.reject(new Error('no endpoint'));
     var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms || 8000);
@@ -1369,62 +1462,126 @@
       .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
       .finally(function () { clearTimeout(timer); });
   }
-  var AUTO_THRESHOLD = 0.6;
   var aiFilledBy = null;
+  var appliedPhrase = '', fromQuickForm = false;
+  var parseVersion = 0;
+  var stopVoice = function () {};
+  var EXAMPLES = [
+    { label: 'Азық-түлік', text: 'Айгүл Магнумнан 12 500-ге азық-түлік алды' },
+    { label: 'Көлік', text: 'Ерлан таксиге 1 800 теңге төледі' },
+    { label: 'Кіріс', text: 'Мәдинаға 320 мың жалақы түсті' }
+  ];
+  function previousCategory(note) {
+    var normalized = lower(note.trim()).replace(/\s+/g, ' ');
+    if (!normalized) return null;
+    var found = records().filter(function (r) {
+      return r.id !== state.editingId && lower((r.note || '').trim()).replace(/\s+/g, ' ') === normalized;
+    });
+    if (!found.length || found[0].type !== 'expense') return null;
+    var cat = found[0].category;
+    return found.every(function (r) { return r.type === 'expense' && r.category === cat; }) ? cat : null;
+  }
+  function parseForBudget(text) {
+    var r = OtbasyAI.parsePhrase(text, knownNames());
+    var previous = r.type !== 'income' && previousCategory(r.note);
+    if (previous) { r.type = 'expense'; r.category = previous; r.previous = true; }
+    return r;
+  }
+  function renderQuickPreview() {
+    var text = $('quickPhrase').value.trim();
+    var r = text ? parseForBudget(text) : OtbasyAI.parsePhrase(EXAMPLES[0].text, []);
+    $('previewTitle').textContent = text ? 'ИИ ұсынған жазба' : 'Үлгі жазба';
+    $('quickAction').textContent = text ? 'Жазбаны тексеру' : 'Мысалды сынау';
+    $('previewAmount').textContent = r.amount && r.amount <= MAX_AMOUNT ? money(r.amount) : '— ₸';
+    $('previewMember').textContent = r.member || 'Таңдау қажет';
+    $('previewType').textContent = r.type === 'income' ? 'Кіріс' : r.type === 'expense' ? 'Шығыс' : 'Таңдау қажет';
+    $('previewCategory').textContent = r.type === 'income' ? '—' : r.category ? CATS[r.category].name : 'Таңдау қажет';
+  }
+  $('quickPhrase').addEventListener('input', renderQuickPreview);
+  $('quickForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var phrase = $('quickPhrase').value.trim();
+    if (!phrase) { startAiDemo(); return; }
+    openEntry(null, true);
+    fromQuickForm = true;
+    $('aiText').value = phrase; runAiFill();
+  });
+  EXAMPLES.forEach(function (example) {
+    $('phraseExamples').appendChild(h('button', { type: 'button', class: 'chip', onclick: function () {
+      $('aiText').value = example.text; runAiFill();
+    } }, example.label));
+  });
   function validAI(r) {
     if (!r || (r.type !== 'income' && r.type !== 'expense')) return null;
-    var amount = Math.round(+r.amount);
     return {
       type: r.type,
-      amount: amount > 0 && amount <= MAX_AMOUNT ? amount : null,
       member: typeof r.member === 'string' && r.member.trim() ? r.member.trim().slice(0, 24) : null,
-      category: r.type === 'expense' && CATS[r.category] ? r.category : null,
-      note: typeof r.note === 'string' ? r.note.trim().slice(0, 60) : '',
-      confidence: r.type === 'expense' && CATS[r.category] ? 0.9 : (r.type === 'income' ? 0.9 : 0)
+      category: r.type === 'expense' && CAT_ORDER.includes(r.category) ? r.category : null,
+      note: typeof r.note === 'string' ? r.note.trim().slice(0, 60) : ''
     };
   }
   function setAiStatus(text, warn) { var el = $('aiStatus'); el.hidden = !text; el.className = 'ai-status' + (warn ? ' is-warn' : ''); el.innerHTML = icon(warn ? 'bulb' : 'sparkle', 14); el.appendChild(h('span', null, text)); }
   function markFilled(id) { var el = $(id); el.classList.add('ai-filled'); setTimeout(function () { el.classList.remove('ai-filled'); }, 2500); }
   function applyParse(r, source) {
-    if (r.type === 'income') $('tIncome').checked = true; else $('tExpense').checked = true;
+    appliedPhrase = $('aiText').value.trim();
+    $('tIncome').checked = r.type === 'income'; $('tExpense').checked = r.type === 'expense';
+    $('typeErr').hidden = true;
     syncType();
-    if (r.amount) { $('amount').value = fmtNum(r.amount); clearErr('amount'); markFilled('amount'); }
-    if (r.member) { $('member').value = normalizeName(r.member); clearErr('member'); renderNameChips(); markFilled('member'); }
-    if (r.note) $('note').value = r.note;
+    $('amount').value = r.amount && r.amount <= MAX_AMOUNT ? fmtNum(r.amount) : '';
+    $('member').value = r.member ? normalizeName(r.member) : '';
+    $('note').value = r.note || '';
+    clearErr('amount'); clearErr('member'); renderNameChips();
+    if ($('amount').value) markFilled('amount');
+    if (r.member) markFilled('member');
     [].forEach.call(document.querySelectorAll('input[name="cat"]'), function (el) { el.checked = false; });
     var unsure = false;
     if (r.type === 'expense') {
-      if (r.category && r.confidence >= AUTO_THRESHOLD) { $({ food: 'cFood', transport: 'cTransport', home: 'cHome', other: 'cOther' }[r.category]).checked = true; clearErr('cat'); }
+      if (r.category) { $({ food: 'cFood', transport: 'cTransport', home: 'cHome', other: 'cOther' }[r.category]).checked = true; clearErr('cat'); }
       else unsure = true;
     }
     aiFilledBy = source;
     renderCatSuggest();
     var missing = [];
-    if (!r.amount) missing.push('соманы');
+    if (!r.type) missing.push('жазба түрін');
+    if (!$('amount').value) missing.push('соманы');
     if (!r.member) missing.push('отбасы мүшесін');
     if (unsure) missing.push('санатты');
     var who = source === 'gemini' ? 'Gemini' : 'Құрылғыдағы ИИ-модель';
+    if (r.previous) who += ' (санат бұрынғы жазбадан алынды)';
     if (missing.length) setAiStatus(who + ' толтырды. Енді ' + missing.join(', ') + ' өзіңіз көрсетіңіз.', true);
     else setAiStatus(who + ' толтырды. Тексеріп, «' + $('submitBtn').textContent + '» басыңыз.');
   }
   function runAiFill() {
     var text = $('aiText').value.trim();
+    var version = ++parseVersion;
     if (!text) { setAiStatus('Бір сөйлем жазыңыз немесе микрофонды басып айтыңыз.', true); $('aiText').focus(); return; }
-    var local = OtbasyAI.parsePhrase(text, knownNames());
+    var local = parseForBudget(text);
     if (!aiEndpoint()) { applyParse(local, 'local'); return; }
     var btn = $('aiFill'); btn.disabled = true; setAiStatus('Gemini талдап жатыр…');
-    callAI({ task: 'parse', text: text.slice(0, 200), names: knownNames().slice(0, 10) }, 8000).then(function (r) {
+    callAI({ task: 'parse', text: text.slice(0, 200) }, 8000).then(function (r) {
+      if (version !== parseVersion) return;
       var g = validAI(r);
       if (!g) throw new Error('bad');
       if (!g.member) g.member = local.member;
-      if (!g.amount) g.amount = local.amount;
+      // A cloud response cannot introduce a number that was absent or ambiguous in the phrase.
+      g.amount = local.amount;
+      if (!g.category && g.type === 'expense' && local.type === 'expense') g.category = local.category;
       if (!g.note) g.note = local.note;
       applyParse(g, 'gemini');
     }).catch(function () {
+      if (version !== parseVersion) return;
       applyParse(local, 'local');
       setAiStatus($('aiStatus').textContent + ' (Gemini қолжетімсіз болды)', true);
-    }).finally(function () { btn.disabled = false; });
+    }).finally(function () { if (version === parseVersion) btn.disabled = false; });
   }
+  function cancelParse() { parseVersion++; $('aiFill').disabled = false; }
+  $('form').addEventListener('input', function (e) {
+    if ($('aiFill').disabled) {
+      cancelParse();
+      if (e.target !== $('aiText')) { appliedPhrase = $('aiText').value.trim(); setAiStatus('Өрістерді өзіңіз тексеріп, сақтай аласыз.'); }
+    }
+    if (e.target === $('aiText')) setAiStatus(appliedPhrase && appliedPhrase !== e.target.value.trim() ? 'Сөйлем өзгерді. Өрістерді қайта толтырыңыз.' : '');
+  });
   $('aiFill').addEventListener('click', runAiFill);
   $('aiText').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runAiFill(); } });
 
@@ -1433,7 +1590,13 @@
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
     var btn = $('aiMic'), rec = null, on = false;
-    btn.hidden = false;
+    btn.hidden = false; $('voiceNote').hidden = false;
+    stopVoice = function () {
+      if (!rec) return;
+      rec.onresult = rec.onerror = rec.onend = null;
+      try { rec.abort(); } catch (e) {}
+      rec = null; on = false; btn.classList.remove('is-on');
+    };
     btn.addEventListener('click', function () {
       if (on && rec) { rec.stop(); return; }
       try { rec = new SR(); } catch (e) { btn.hidden = true; return; }
@@ -1454,25 +1617,27 @@
     var chosen = document.querySelector('input[name="cat"]:checked');
     var text = $('note').value.trim();
     if (currentType() !== 'expense' || chosen || !text) { box.hidden = true; return; }
+    var previous = previousCategory(text);
     var sug = OtbasyAI.suggestCategory(text);
-    if (!sug) { box.hidden = true; return; }
-    var c = sug.category;
+    if (!previous && !sug) { box.hidden = true; return; }
+    var c = previous || sug.category;
     box.appendChild(h('span', { html: icon('sparkle', 14), style: 'display:inline-grid;color:var(--accent)' }));
-    box.appendChild(h('span', null, 'ИИ ұсынысы:'));
+    box.appendChild(h('span', null, previous ? 'Бұрынғы жазба бойынша' : 'ИИ ұсынысы'));
     box.appendChild(h('button', { class: 'chip', type: 'button', style: '--c:' + CATS[c].color, onclick: function () {
       $({ food: 'cFood', transport: 'cTransport', home: 'cHome', other: 'cOther' }[c]).checked = true; clearErr('cat'); aiFilledBy = aiFilledBy || 'local'; renderCatSuggest();
-    } }, h('i'), CATS[c].name + ' · ' + Math.round(sug.prob * 100) + '%'));
+    } }, h('i'), CATS[c].name + (previous ? '' : ' · ' + Math.round(sug.prob * 100) + '%')));
     box.hidden = false;
   }
   $('note').addEventListener('input', function () { clearTimeout(suggestTimer); suggestTimer = setTimeout(renderCatSuggest, 250); });
 
   /* ---------- entry form ---------- */
   var form = $('form');
-  function currentType() { return $('tIncome').checked ? 'income' : 'expense'; }
+  function currentType() { return $('tIncome').checked ? 'income' : $('tExpense').checked ? 'expense' : null; }
   function syncType() {
     var inc = currentType() === 'income';
     $('catField').hidden = inc;
-    $('submitBtn').textContent = state.editingId ? 'Өзгерісті сақтау' : inc ? 'Кірісті қосу' : 'Шығысты қосу';
+    $('typeErr').hidden = true;
+    $('submitBtn').textContent = state.editingId ? 'Өзгерісті сақтау' : !currentType() ? 'Жазбаны сақтау' : inc ? 'Кірісті қосу' : 'Шығысты қосу';
     $('note').placeholder = inc ? 'Мысалы, жалақы' : 'Мысалы, апталық азық-түлік';
     clearErr('cat');
     if ($('catSuggest')) renderCatSuggest();
@@ -1514,10 +1679,13 @@
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
+    if ($('aiFill').disabled) { setAiStatus('Сөйлем әлі талданып жатыр. Нәтижені тексеріп, сақтаңыз.', true); return; }
+    if ($('aiText').value.trim() && $('aiText').value.trim() !== appliedPhrase) { runAiFill(); return; }
     var type = currentType(), amount = digits($('amount').value), member = normalizeName($('member').value);
     var catEl = document.querySelector('input[name="cat"]:checked');
     var category = type === 'expense' ? (catEl ? catEl.value : '') : null;
     var bad = null;
+    if (!type) { $('typeErr').textContent = 'Кіріс немесе шығыс екенін таңдаңыз.'; $('typeErr').hidden = false; bad = $('tExpense'); }
     if (amount <= 0) { showErr('amount', 'Соманы жазыңыз: ол 0-ден үлкен болуы керек'); bad = bad || $('amount'); }
     else if (amount > MAX_AMOUNT) { showErr('amount', 'Сома тым үлкен. 100 000 000 ₸-ге дейін жазыңыз'); bad = bad || $('amount'); }
     if (!member) { showErr('member', 'Кім екенін жазыңыз, мысалы: Айгүл'); bad = bad || $('member'); }
@@ -1536,20 +1704,24 @@
       rec.type = type; rec.amount = amount; rec.member = member; rec.note = note; rec.category = category; rec.createdAt = when.toISOString();
     } else {
       rec = { id: uid(), type: type, amount: amount, member: member, note: note, category: category, createdAt: when.toISOString() };
-      if (aiFilledBy) rec.via = aiFilledBy;
       records().push(rec);
     }
+    if (aiFilledBy) rec.via = aiFilledBy;
+    var followDemo = isDemo() && !!aiFilledBy;
+    if (followDemo) { state.demoEntryId = rec.id; setHistoryType('all'); setQuery(''); }
+    if (fromQuickForm) $('quickPhrase').value = '';
     state.flashId = rec.id;
     state.viewMonth = monthKey(when);
     $('member').value = member;
     commit();
     $('amount').value = ''; $('note').value = ''; $('aiText').value = '';
-    aiFilledBy = null; setAiStatus('');
+    aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false; setAiStatus('');
     if (catEl) catEl.checked = false;
     renderCatSuggest();
     renderNameChips();
     toast(editing ? 'Жазба өзгертілді' : (type === 'income' ? 'Кіріс қосылды: +' : 'Шығыс қосылды: −') + fmtNum(amount) + NB + '₸');
     closeEntry();
+    if (followDemo) goTo('histCard');
   });
 
   /* ---------- delete ---------- */
@@ -1574,28 +1746,53 @@
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close('cancel'); });
 
   /* ---------- demo ---------- */
-  function resetForm() { $('member').value = ''; fillForm(null); }
-  function resetView() { state.histLimit = HIST_PAGE; state.activeCat = null; state.editingGoal = false; state.viewMonth = nowKey(); state.bellSeen = ''; }
+  function resetForm() {
+    cancelParse(); stopVoice(); aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false;
+    $('quickPhrase').value = ''; $('aiText').value = ''; $('amount').value = ''; $('member').value = ''; $('note').value = '';
+    $('tExpense').checked = true;
+    document.querySelectorAll('input[name="cat"]').forEach(function (el) { el.checked = false; });
+    fillForm(null); setAiStatus(''); renderAiMode();
+  }
+  function resetView() {
+    setHistoryType('all'); state.histScope = null; state.query = ''; state.histLimit = HIST_PAGE; state.demoEntryId = null; state.activeCat = null;
+    state.editingGoal = false; state.viewMonth = nowKey(); state.bellSeen = ''; state.flashId = null;
+  }
   function enterDemo(quiet) {
     state.mode = 'demo'; state.demo = buildDemo(); state.demoGoal = { name: 'Үйге бастапқы жарна', target: 5000000 }; state.demoFlags = { read: true };
     state.demoLimits = { food: 150000, transport: 40000, home: 250000, other: 50000 };
     state.demoReminders = buildDemoReminders();
-    resetView(); resetForm(); closeMenu(); setQuery(''); render();
+    resetView(); resetForm(); resetChat(); closeMenu(); setQuery(''); render();
     if (quiet !== true) { window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Мысал ашылды'); }
   }
   function exitDemo() {
     endTour();
     state.mode = 'personal'; state.demo = []; state.personal = readStore(); state.goal = readGoal(); state.flags = readFlags();
     state.limits = readLimits(); state.reminders = readReminders(); state.demoLimits = {}; state.demoReminders = [];
-    resetView(); resetForm(); setQuery(''); render();
+    resetView(); resetForm(); resetChat(); setQuery(''); render();
+    var address = new URL(window.location.href);
+    if (address.searchParams.has('demo')) { address.searchParams.delete('demo'); history.replaceState(null, '', address.href); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     toast('Өз бюджетіңізге оралдыңыз');
   }
   $('exitDemoBtn').addEventListener('click', exitDemo);
+  function startAiDemo() {
+    endTour();
+    if (!isDemo()) enterDemo(true);
+    openEntry(null, true); $('aiText').value = EXAMPLES[0].text; runAiFill();
+  }
+  $('askAboutEntry').addEventListener('click', function () {
+    var rec = records().find(function (r) { return r.id === state.demoEntryId; });
+    if (!rec) return;
+    setView(monthKey(new Date(rec.createdAt)));
+    var q = rec.type === 'income' ? rec.member + ' қанша кіріс алды?' : rec.member + ' ' + CATS[rec.category].name + ' санатына қанша жұмсады?';
+    ask(q); goTo('aiCard');
+  });
   $('moreBtn').addEventListener('click', function () { state.histLimit += HIST_PAGE; renderHistory(); });
 
   /* ---------- search ---------- */
   function setQuery(q) {
+    if (state.histScope) setHistoryType('all');
+    state.histScope = null;
     state.query = q;
     if ($('searchTop').value !== q) $('searchTop').value = q;
     if ($('searchHist').value !== q) $('searchHist').value = q;
@@ -1607,11 +1804,19 @@
   $('searchTop').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); goTo('histCard'); } });
   $('searchHist').addEventListener('input', function () { setQuery(this.value); });
   $('clearSearch').addEventListener('click', function () { setQuery(''); });
+  function showHistoryScope(scope) {
+    setQuery('');
+    setHistoryType(scope.type || 'all');
+    state.histScope = scope; renderHistory(); goTo('histCard');
+  }
+  function setHistoryType(type) {
+    state.histType = type; state.histLimit = HIST_PAGE;
+    [].forEach.call($('histType').children, function (c) { var on = c.dataset.htype === type; c.classList.toggle('is-on', on); c.setAttribute('aria-pressed', String(on)); });
+  }
   $('histType').addEventListener('click', function (e) {
     var b = e.target.closest('[data-htype]');
     if (!b) return;
-    state.histType = b.dataset.htype; state.histLimit = HIST_PAGE;
-    [].forEach.call(this.children, function (c) { var on = c === b; c.classList.toggle('is-on', on); c.setAttribute('aria-pressed', String(on)); });
+    state.histScope = null; setHistoryType(b.dataset.htype);
     renderHistory();
   });
 
@@ -1621,19 +1826,29 @@
   function setInert(on, except) {
     ['topbar', 'top', 'sidebar'].forEach(function (id) { var el = $(id); if (!el || id === except) return; if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); });
   }
-  function openEntry(rec) {
+  var entryReturnFocus = null;
+  function openEntry(rec, review) {
+    entryReturnFocus = document.activeElement;
     closeMenu();
-    fillForm(rec && rec.id && rec.type ? rec : null);
+    cancelParse();
+    var editingRec = rec && rec.id && rec.type ? rec : null;
+    if (editingRec || state.editingId) {
+      $('aiText').value = ''; setAiStatus(''); aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false;
+    }
+    fillForm(editingRec);
     $('entry').classList.add('open'); $('scrim').classList.add('open', 'over-entry');
     document.documentElement.classList.add('lock'); setInert(true); openName = 'entry';
-    $('aiText').value = ''; setAiStatus(''); aiFilledBy = null; renderCatSuggest();
-    var editingRec = rec && rec.id && rec.type;
-    setTimeout(function () { $(editingRec ? 'amount' : 'aiText').focus({ preventScroll: true }); }, 60);
+    renderCatSuggest();
+    $('entry').scrollTop = 0; $('entryDemo').hidden = !isDemo(); $('phraseExamples').hidden = !isDemo();
+    setTimeout(function () { if (openName === 'entry') $(review ? 'formTitle' : editingRec ? 'amount' : 'aiText').focus({ preventScroll: true }); }, 60);
   }
   function closeEntry() {
     if (openName !== 'entry') return;
+    if ($('aiFill').disabled) setAiStatus('');
+    cancelParse(); stopVoice();
     $('entry').classList.remove('open'); $('scrim').classList.remove('open', 'over-entry');
     document.documentElement.classList.remove('lock'); setInert(false); openName = null;
+    if (entryReturnFocus && entryReturnFocus.isConnected) entryReturnFocus.focus({ preventScroll: true });
   }
   function openMenu() {
     if (deskMq.matches) return;
@@ -1734,6 +1949,7 @@
 
   /* ---------- guided tour for presentations ---------- */
   var TOUR = [
+    { id: 'hero', title: 'Бір сөйлемнен жазбаға', text: 'Мысалды сынап көріңіз. ИИ соманы, отбасы мүшесін және санатты ұсынады. Өрістерді өзгертіп, жазбаны мысал бюджетіне сақтай аласыз.' },
     { id: 'statusCard', title: 'Айдың қорытындысы', text: 'Кіріс, шығыс және қалдық бір жерде. Сақина кірістің қанша пайызы қалғанын көрсетеді. Көрсеткілермен өткен айларды ашуға болады.' },
     { id: 'catCard', title: 'Ақша қайда кетті?', text: 'Шығыс санаттарға бөлінеді. «Лимиттер» арқылы әр санатқа айлық шек қойылады: шығыс оған жақындағанда сайт ескертеді.' },
     { id: 'memCard', title: 'Кім қанша жұмсады?', text: 'Әр отбасы мүшесінің шығысы мен оның жалпы шығыстағы үлесі.' },
@@ -1771,6 +1987,8 @@
     $('tourTitle').textContent = st.title;
     $('tourText').textContent = st.text;
     $('tourPrev').disabled = tourIdx === 0;
+    $('tourPrev').hidden = tourIdx === 0;
+    $('tourTry').hidden = tourIdx !== 0;
     $('tourNext').textContent = tourIdx === TOUR.length - 1 ? 'Аяқтау' : 'Келесі';
     var tall = el.getBoundingClientRect().height > window.innerHeight * 0.5 || window.innerWidth < 720;
     el.scrollIntoView({ behavior: 'smooth', block: tall ? 'start' : 'center' });
@@ -1798,12 +2016,14 @@
   window.addEventListener('scroll', tourOnMove, { passive: true });
   window.addEventListener('resize', tourOnMove);
   $('tourNext').addEventListener('click', function () { tourGo(1); });
+  $('tourTry').addEventListener('click', startAiDemo);
   $('tourPrev').addEventListener('click', function () { tourGo(-1); });
   $('tourClose').addEventListener('click', endTour);
 
   /* ---------- keep in sync ---------- */
   window.addEventListener('storage', function (e) {
-    if ([KEY, GOAL_KEY, FLAGS_KEY, LIMITS_KEY, REM_KEY].indexOf(e.key) < 0) return;
+    if (!e.key || e.key === AI_EP_KEY) { cancelParse(); setAiStatus(''); renderAiMode(); }
+    if (e.key && [KEY, GOAL_KEY, FLAGS_KEY, LIMITS_KEY, REM_KEY].indexOf(e.key) < 0) return;
     state.personal = readStore(); state.goal = readGoal(); state.flags = readFlags(); state.limits = readLimits(); state.reminders = readReminders();
     if (!isDemo()) render();
   });
@@ -1830,4 +2050,8 @@
   fillForm(null);
   render();
   spy();
+  if (new URLSearchParams(window.location.search).get('demo') === 'ai') startAiDemo();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('./sw.js').catch(function () { /* The online app also works without a cache. */ });
+  }
 })();

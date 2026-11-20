@@ -7,6 +7,7 @@
 var OtbasyAI = (function () {
   'use strict';
   var LABELS = ['income', 'food', 'transport', 'home', 'other'];
+  var AUTO_THRESHOLD = 0.6;
   var TRAIN = [
     /* income */
     'income|жалақы', 'income|жалақы түсті', 'income|айлық түсті', 'income|айлық жалақы', 'income|аванс', 'income|аванс алдым',
@@ -117,20 +118,88 @@ var OtbasyAI = (function () {
   }
 
   /* amount: "12 500", "12500 ₸", "12,5 мың", "12к", "1,2 млн", "5 мыңға" */
-  var AMOUNT_RE = /(\d{1,3}(?:[\s ]\d{3})+|\d+(?:[.,]\d+)?)\s*(млн|миллион\w*|мың\w*|тыс\w*|к(?![а-яәғқңөұүһі]))?/gi;
-  function parseAmount(text) {
-    var best = null, m;
-    AMOUNT_RE.lastIndex = 0;
-    while ((m = AMOUNT_RE.exec(text))) {
-      var n = parseFloat(m[1].replace(/[\s ]/g, '').replace(',', '.'));
-      if (!isFinite(n)) continue;
-      var mult = m[2] ? lower(m[2]) : '';
-      if (/^(млн|миллион)/.test(mult)) n *= 1e6; else if (/^(мың|тыс|к)/.test(mult)) n *= 1000;
-      n = Math.round(n);
-      if (/^аи-?$/i.test(text.slice(Math.max(0, m.index - 3), m.index).trim()) || /аи-$/i.test(text.slice(0, m.index))) continue; /* АИ-92 */
-      if (n > 0 && (!best || n > best.value)) best = { value: n, start: m.index, end: m.index + m[0].length };
+  var AMOUNT_RE = /(\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d{1,3}(?:[.,]\d{3}){2,}|\d+)([.,]\d+)?(?:\s*(млн|миллион[а-я]*|мың[а-яәғқңөұүһі]*|тыс(?:яч[а-я]*)?\.?|[кk](?!\p{L})))?/giu;
+  var numerals = new Map();
+  [
+    ['жарты жарым', 0.5], ['полтора полторы', 1.5],
+    ['бір один одна одну', 1], ['екі два две', 2], ['үш три', 3], ['төрт четыре', 4], ['бес пять', 5],
+    ['алты шесть', 6], ['жеті семь', 7], ['сегіз восемь', 8], ['тоғыз девять', 9],
+    ['он десять', 10], ['одиннадцать', 11], ['двенадцать', 12], ['тринадцать', 13], ['четырнадцать', 14],
+    ['пятнадцать', 15], ['шестнадцать', 16], ['семнадцать', 17], ['восемнадцать', 18], ['девятнадцать', 19],
+    ['жиырма двадцать', 20], ['отыз тридцать', 30], ['қырық сорок', 40], ['елу пятьдесят', 50],
+    ['алпыс шестьдесят', 60], ['жетпіс семьдесят', 70], ['сексен восемьдесят', 80], ['тоқсан девяносто', 90],
+    ['жүз жүзге сто', 100], ['двести', 200], ['триста', 300], ['четыреста', 400], ['пятьсот', 500],
+    ['шестьсот', 600], ['семьсот', 700], ['восемьсот', 800], ['девятьсот', 900],
+    ['мың мыңға тысяча тысячи тысячу тысяч', 1000], ['миллион миллионға миллиона миллионов', 1000000]
+  ].forEach(function (entry) { entry[0].split(' ').forEach(function (word) { numerals.set(word, entry[1]); }); });
+  function spokenAmounts(text) {
+    var amounts = [], group = [], start = 0, end = 0;
+    function finish() {
+      if (!group.length) return;
+      var total = 0, part = 0, lastScale = Infinity, last = Infinity;
+      for (var n of group) {
+        if (n >= 1000) {
+          if (n >= lastScale) { group = []; return; }
+          total += (part || 1) * n; part = 0; lastScale = n; last = Infinity;
+        } else if (n === 0.5 && part && Number.isInteger(part)) {
+          part += 0.5; last = 0.5;
+        } else if (n === 100 && part < 10) {
+          part = (part || 1) * 100; last = 100;
+        } else {
+          if (n >= last || (last < 20 && last !== 10)) { group = []; return; }
+          part += n; last = n;
+        }
+      }
+      var amount = Math.round(total + part), after = text.slice(end);
+      var currency = /^\s*(?:теңге|тенге|тг|₸)/iu.test(after);
+      if (!/^\s*(?:кг|килограм|литр|шт|дана|адам|человек)/iu.test(after)) {
+        var lastWord = group[group.length - 1];
+        amounts.push({ value: amount, start: start, end: end, marked: currency || lastScale < Infinity,
+          scale: lastWord >= 1000 ? lastWord : 0, shortUnmarked: !currency && amount < 100 });
+      }
+      group = [];
     }
-    return best;
+    for (var token of text.matchAll(/\p{L}+/gu)) {
+      if (!numerals.has(lower(token[0]))) { finish(); continue; }
+      if (group.length && !/^\s+$/.test(text.slice(end, token.index))) finish();
+      if (!group.length) start = token.index;
+      group.push(numerals.get(lower(token[0]))); end = token.index + token[0].length;
+    }
+    finish(); return amounts;
+  }
+  function parseAmount(text) {
+    var candidates = [], m;
+    // Preserve offsets while excluding dates, times and fuel grades from currency candidates.
+    var numbers = text.replace(/\d{1,4}[./-]\d{1,2}[./-]\d{2,4}|\d{1,2}:\d{2}|[АA][ИI][- ]?\d{2,3}/gi, function (s) { return ' '.repeat(s.length); });
+    AMOUNT_RE.lastIndex = 0;
+    while ((m = AMOUNT_RE.exec(numbers))) {
+      var before = text.slice(0, m.index), after = text.slice(AMOUNT_RE.lastIndex);
+      if (/[\p{L}\d−-]$/u.test(before) || /^\s*(?:кг|килограм|литр|шт|дана|адам|человек)/iu.test(after)) continue;
+      var unit = lower(m[3] || '');
+      var fraction = m[2] ? m[2].slice(1) : '';
+      var thousandsGroup = !unit && fraction.length === 3;
+      var scale = /^(млн|миллион)/.test(unit) ? 1e6 : unit ? 1000 : 0;
+      var n = Number(m[1].replace(/[\s.,]/g, '') + (fraction ? (thousandsGroup ? '' : '.') + fraction : ''));
+      n = Math.round(n * (scale || 1));
+      if (n > 0 && Number.isSafeInteger(n)) candidates.push({ value: n, start: m.index, end: AMOUNT_RE.lastIndex,
+        scale: scale, marked: !!unit || /^\s*(?:₸|теңге|тенге|тг|тңг|-(?:ға|ге|қа|ке))/iu.test(after) });
+    }
+    var remaining = numbers.split('');
+    candidates.forEach(function (a) { remaining.fill('·', a.start, a.end); });
+    var ordered = candidates.concat(spokenAmounts(remaining.join(''))).sort(function (a, b) { return a.start - b.start; });
+    var combined = [];
+    ordered.forEach(function (a) {
+      var last = combined[combined.length - 1];
+      // Speech services can mix words and digits, for example «12 мың бес жүз».
+      if (last && last.scale > a.value && /^\s+$/.test(text.slice(last.end, a.start))) {
+        last.value += a.value; last.end = a.end; last.scale = a.scale;
+      } else combined.push(a);
+    });
+    // In «екі нан», two describes a quantity, not a price.
+    candidates = combined.filter(function (a) { return !a.shortUnmarked; });
+    var marked = candidates.filter(function (a) { return a.marked; });
+    var pool = marked.length ? marked : candidates;
+    return pool.length === 1 ? pool[0] : null;
   }
 
   var CASE_ENDINGS = ['ның', 'нің', 'дың', 'дің', 'тың', 'тің', 'ға', 'ге', 'қа', 'ке', 'на', 'не', 'а', 'е', 'ды', 'ді', 'ты', 'ті', 'ны', 'ні',
@@ -141,16 +210,19 @@ var OtbasyAI = (function () {
       var n = lower(names[i]);
       if (t === n) return names[i];
       if (t.indexOf(n) === 0 && CASE_ENDINGS.indexOf(t.slice(n.length)) !== -1) return names[i];
+      if (n.length >= 3 && /[ая]$/.test(n) && t.startsWith(n.slice(0, -1)) && /^(ы|и|е|у|ю|ой|ей)$/.test(t.slice(n.length - 1))) return names[i];
     }
     return null;
   }
   function stripEnding(token) {
     var t = token;
-    var ends = CASE_ENDINGS.slice().sort(function (a, b) { return b.length - a.length; });
+    var ends = ['ның', 'нің', 'дың', 'дің', 'тың', 'тің', 'ға', 'ге', 'қа', 'ке'];
     for (var i = 0; i < ends.length; i++) if (ends[i].length >= 2 && t.length - ends[i].length >= 3 && lower(t).slice(-ends[i].length) === ends[i]) return t.slice(0, -ends[i].length);
     return t;
   }
   var NOT_NAMES = /^(магнум|small|смолл|анвар|каспи|kaspi|яндекс|yandex|indrive|wolt|glovo|onay|онай|аи|kcell|tele2|бейлайн|beeline|netflix|алматы|астана|шымкент)/i;
+  var budgetWords = new Set(['сегодня', 'вчера', 'бүгін', 'кеше', 'покупка', 'получил', 'получила']);
+  TRAIN.forEach(function (line) { words(line.split('|')[1]).forEach(function (word) { budgetWords.add(word); }); });
 
   function parsePhrase(text, knownNames) {
     var src = String(text || '').trim();
@@ -167,20 +239,18 @@ var OtbasyAI = (function () {
     if (!res.member) {
       for (var j = 0; j < tokens.length; j++) {
         var tk = tokens[j];
-        if (/^[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі]{2,}$/.test(tk) && !NOT_NAMES.test(tk)) { res.member = stripEnding(tk); nameTok = tk; break; }
+        if (/^[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі]{2,}$/.test(tk) && !NOT_NAMES.test(tk) && !budgetWords.has(lower(tk)) && !budgetWords.has(lower(stripEnding(tk))) && !FUNC[lower(tk)]) { res.member = stripEnding(tk); nameTok = tk; break; }
       }
     }
     var noteText = rest;
     if (nameTok) noteText = noteText.replace(nameTok, ' ');
     noteText = noteText.replace(/\s+/g, ' ').replace(/^[\s,.;:-]+|[\s,.;:-]+$/g, '');
-    var pred = predict(noteText || src);
-    res.type = pred.label === 'income' ? 'income' : 'expense';
-    if (res.type === 'expense') {
-      var catPred = predict(noteText || src, ['food', 'transport', 'home', 'other']);
-      res.category = catPred.label;
-      res.confidence = catPred.prob;
-    } else res.confidence = pred.prob;
-    if (!pred.known) res.confidence = 0;
+    var pred = predict(noteText);
+    res.confidence = pred.prob;
+    if (pred.prob >= AUTO_THRESHOLD) {
+      res.type = pred.label === 'income' ? 'income' : 'expense';
+      res.category = res.type === 'expense' ? pred.label : null;
+    }
     res.note = cleanNote(noteText);
     return res;
   }
@@ -197,5 +267,5 @@ var OtbasyAI = (function () {
     var p = predict(text, ['food', 'transport', 'home', 'other']);
     return p.known ? { category: p.label, prob: p.prob } : null;
   }
-  return { LABELS: LABELS, predict: predict, parsePhrase: parsePhrase, parseAmount: parseAmount, suggestCategory: suggestCategory, trainSize: TRAIN.length, _train: train, _features: features };
+  return { LABELS: LABELS, AUTO_THRESHOLD: AUTO_THRESHOLD, predict: predict, parsePhrase: parsePhrase, parseAmount: parseAmount, matchName: matchName, suggestCategory: suggestCategory, trainSize: TRAIN.length, _train: train, _features: features };
 })();

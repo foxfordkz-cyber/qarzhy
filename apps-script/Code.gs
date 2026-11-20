@@ -10,20 +10,23 @@
  *   3. Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone → copy the /exec URL.
  *   4. On the site: Параметрлер → Жасанды интеллект (Gemini) → paste the URL → Сақтау және тексеру.
  *
- * Privacy: the site sends only the typed phrase (parse) or the question plus monthly totals by
- * category and by first name (ask). No full history, no surnames, no phone numbers. Nothing is stored here.
+ * Personal mode sends the entered phrase or the question and budget totals when enabled.
+ * Demo and transaction lookups run locally. The proxy does not store requests.
  */
 
 var PROPS = PropertiesService.getScriptProperties();
 var MAX_PER_MINUTE = 40;
 
-function doGet() { return json({ ok: true, model: model_() }); }
+function doGet() { return json({ ok: !!PROPS.getProperty('GEMINI_API_KEY'), model: model_() }); }
 
 function doPost(e) {
   try {
     var req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    if (req.task === 'ping') return json({ ok: true, model: model_() });
     if (!rateOk_()) return json({ error: 'rate_limited' });
+    if (req.task === 'ping') {
+      var reply = gemini_('Answer briefly.', 'Say OK.', null, 512);
+      return json({ ok: !!reply.trim(), model: model_() });
+    }
     if (req.task === 'parse') return json(parse_(String(req.text || '').slice(0, 200), (req.names || []).slice(0, 10)));
     if (req.task === 'ask') return json(ask_(String(req.question || '').slice(0, 300), req.context || {}));
     return json({ error: 'unknown_task' });
@@ -37,11 +40,16 @@ function model_() { return PROPS.getProperty('GEMINI_MODEL') || 'gemini-2.5-flas
 function json(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 
 function rateOk_() {
-  var cache = CacheService.getScriptCache();
-  var key = 'rate_' + Math.floor(Date.now() / 60000);
-  var n = Number(cache.get(key) || 0) + 1;
-  cache.put(key, String(n), 120);
-  return n <= MAX_PER_MINUTE;
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(300)) return false;
+  try {
+    var cache = CacheService.getScriptCache();
+    var key = 'rate_' + Math.floor(Date.now() / 60000);
+    var n = Number(cache.get(key) || 0);
+    if (n >= MAX_PER_MINUTE) return false;
+    cache.put(key, String(n + 1), 120);
+    return true;
+  } finally { lock.releaseLock(); }
 }
 
 function gemini_(system, user, schema, maxTokens) {
@@ -98,7 +106,7 @@ function ask_(question, context) {
   var system = [
     'Сен — «Отбасы бюджеті» сайтындағы отбасылық қаржы көмекшісісің.',
     'Жауапты пайдаланушы жазған тілде бер (қазақша немесе орысша), 3–6 сөйлем, қарапайым тілмен.',
-    'Отбасының осы айдағы деректері берілген (сомалар теңгемен). Нақты цифрларға сүйен, ойдан сан шығарма.',
+    'Отбасының таңдалған айдағы деректері берілген (сомалар теңгемен). Нақты цифрларға сүйен, ойдан сан шығарма.',
     'Инвестициялық, салықтық немесе заңгерлік кепілдік берме; керек болса маманға жүгінуге кеңес бер.',
     'Банк картасының деректерін, SMS-кодты, құпиясөзді ешқашан сұрама.'
   ].join('\n');
