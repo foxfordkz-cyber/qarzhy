@@ -1,18 +1,21 @@
-# Gemini proxy (Google Apps Script)
+# Подключение Gemini к личному бюджету
 
-The site works without it: phrases are parsed and categorised by the on-device model.
-Enabling the proxy sends typed phrases or general questions and budget totals to Gemini. Per-person and category lookups, the home preview and the sample family demo always run on the device. The key stays inside Google Apps Script.
+Основной ввод на казахском и русском работает на устройстве. Gemini можно включить дополнительно для разбора отдельной записи и свободных вопросов. Настройка сохраняется в том браузере, где пользователь подтвердил подключение.
 
-1. Get a key at https://aistudio.google.com → **Get API key**.
-2. Open https://script.google.com → **New project**, replace the code with `Code.gs` from this folder, save.
-3. **Project Settings → Script properties → Add property**
-   - `GEMINI_API_KEY` = your key
-   - `GEMINI_MODEL` = `gemini-2.5-flash` (optional; use any model the key has access to)
-4. **Deploy → New deployment → Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-   - Allow access when Google asks, then copy the URL ending in `/exec`.
-5. On the site: **Параметрлер → Жасанды интеллект (Gemini)** → paste the URL → **Сақтау және тексеру**.
-   The check calls the model before saving the address. Clear the address and save to return to local-only mode. An operator can prefill the address through `AI_DEFAULT_ENDPOINT` in `js/app.js`. Each browser still enables it in Settings.
+1. Создайте ключ Gemini в своём проекте Google AI Studio. [Страница ключей](https://aistudio.google.com/apikey)
+2. В Google Apps Script создайте проект, замените содержимое `Code.gs` кодом из репозитория и сохраните. [Открыть Apps Script](https://script.google.com/home) · [Код для копирования](Code.gs)
+3. В левой панели нажмите шестерёнку. В **Настройки проекта → Свойства скрипта** добавьте свойство `GEMINI_API_KEY`. В поле **Значение** вставьте ключ. При желании добавьте `GEMINI_MODEL` с идентификатором модели, доступной вашему проекту. По умолчанию в коде выбрана `gemini-3.1-flash-lite`. [Модель](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite)
+4. Выберите **Начать развертывание → Новое развертывание → Веб-приложение**. Укажите выполнение от своего имени и доступ для всех (`Anyone`). Подтвердите разрешения Google и скопируйте полный URL веб-приложения, который заканчивается на `/exec`. [Публикация веб-приложений Apps Script](https://developers.google.com/apps-script/guides/web)
+5. Откройте личный бюджет. В меню **«Параметрлер» → «Жасанды интеллект (Gemini)»** вставьте этот URL и нажмите **«Сақтау және тексеру»**. Сайт отправит тестовый запрос без данных бюджета. Сообщение **«Проксимен байланыс бар»** с именем модели подтверждает успешный ответ. [Открыть сайт](https://foxfordkz-cyber.github.io/qarzhy/)
 
-Limits: 40 requests per minute in total (`MAX_PER_MINUTE`), so a leaked URL cannot burn the quota quickly.
+## Если проверка не прошла
+
+Проверка ждёт ответ до 30 секунд. При сообщении об истечении времени повторите её. Если браузер сообщает об ошибке доступа, откройте свой `/exec` в приватной вкладке без входа в Google. Опубликованный скрипт показывает `ok` и `model`. Значение `ok: true` в этом ответе подтверждает наличие непустого свойства ключа. Сам запрос к Gemini выполняет зелёная кнопка на сайте.
+
+Если сервис сообщает об отсутствии модели, сверьте `GEMINI_MODEL` с моделями вашего проекта. При ошибке квоты проверьте лимиты в AI Studio. Скрипт также ограничивает суммарную частоту запросов для всех пользователей развёртывания до 40 в минуту.
+
+## Какие данные передаются
+
+При разборе одной записи через прокси отправляется введённая фраза. Для свободного вопроса отправляются его текст, суммы доходов и расходов, баланс, расходы по категориям, накопленная сумма и целевая сумма при её наличии. Запросы точных сумм по истории обрабатываются на устройстве. Демо и семейная комната также работают локально с текстом.
+
+Ключ используется только внутри Apps Script. Ссылка `/exec` позволяет обращаться к прокси и расходовать его квоту. Для отключения Gemini очистите поле в настройках сайта и нажмите «Сақтау және тексеру».

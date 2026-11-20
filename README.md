@@ -1,69 +1,54 @@
-# Otbasy Budget
+# Отбасы бюджеті · Otbasy Budget
 
-Family budget web app in Kazakh: record income and expenses, see this month's
-totals, spending by family member and by category, and a demo mode for presentations.
+Семейный бюджет в тенге с интерфейсом на казахском. Чтобы записать покупки, достаточно одной фразы на казахском или русском. Приложение предлагает черновики, человек проверяет их и видит, как изменились расходы и остаток месяца.
 
-Try the [two-entry demo](https://foxfordkz-cyber.github.io/qarzhy/?demo=batch). One phrase produces yesterday's grocery purchase of 12,500 ₸ and a taxi ride of 1,800 ₸. Review both drafts, change either amount and confirm. Open the two saved records from the history card. In the [single-entry demo](https://foxfordkz-cyber.github.io/qarzhy/?demo=ai), «Көмекшіден сұрау» calculates the total for that person and category and links to the underlying records.
+[Открыть сайт](https://foxfordkz-cyber.github.io/qarzhy/) · [Демо с двумя тратами](https://foxfordkz-cyber.github.io/qarzhy/?demo=batch) · [Демо-видео](https://foxfordkz-cyber.github.io/qarzhy/competition/Otbasy-budget-demo.mp4)
 
-## A shared budget on two phones
+## Что попробовать
 
-Open [Ортақ бюджет](https://foxfordkz-cyber.github.io/qarzhy/?family=1) and choose «Жаңа бөлме ашу». Open the invitation on the second phone and choose «Бөлмеге қосылу». Each room starts with an empty ledger. Members can add, edit and delete transactions, set category limits and goals, and mark reminders as paid. The status line shows when local changes have reached the server. Previously connected phones can queue edits offline.
+1. **Две траты одной фразой.** В демо уже введено «Кеше Айгүл азық-түлікке 12 500 теңге, ал Ерлан таксиге 1 800 теңге жұмсады». Модель предлагает две вчерашние записи — продукты и такси, всего **14 300 ₸**. Нажмите на любую строку, чтобы изменить сумму, имя, категорию или дату. Нажмите «2 жазбаны сақтау», затем «Осы жазбаларды көру», чтобы увидеть обе записи в истории. [Открыть демо](https://foxfordkz-cyber.github.io/qarzhy/?demo=batch)
+2. **Проверить ответ помощника.** В демо с одной покупкой подтвердите расход и нажмите «Көмекшіден сұрау». Помощник рассчитает сумму по записям человека за выбранный месяц и предложит открыть операции, из которых получился ответ. [Открыть демо с одной покупкой](https://foxfordkz-cyber.github.io/qarzhy/?demo=ai)
+3. **Подключить второй телефон.** Нажмите «Жаңа бөлме ашу», откройте ссылку-приглашение на втором устройстве и выберите «Бөлмеге қосылу». Новая комната пуста. Добавленная трата появится на обоих экранах. Между устройствами также синхронизируются лимиты, цель и оплаты по напоминаниям. [Открыть семейную комнату](https://foxfordkz-cyber.github.io/qarzhy/?family=1)
 
-Every invitation grants read and write access. The secret is in the URL fragment and stays on the devices. Web Crypto derives separate keys for the room address, access token and AES-GCM encryption. The relay stores encrypted snapshots and revisions. Personal and demo records use separate storage. In a shared room, text analysis and budget queries run on the device.
+## Как работает ИИ
 
-## Timed pilot
+Собственный наивный байесовский классификатор обучается в браузере на **297** размеченных примерах. Он использует основы слов и символьные триграммы, чтобы различать доходы и четыре категории расходов. Разборщик выделяет суммы, имена и даты, в том числе суммы словами и имена с казахскими падежными окончаниями. В одной фразе можно проверить до восьми операций. Указанную вместе с оплатой сдачу приложение предлагает уточнить вручную. [Код модели и разборщика](js/ai.js)
 
-The [pilot](https://foxfordkz-cyber.github.io/qarzhy/pilot/) has six sample transactions in Kazakh and Russian. Participants enter three manually and three with AI. Active time pauses when the tab is hidden. Each participant sees their times, wrong confirmations and corrections before opting in to share anonymous measurements. The [public summary](https://foxfordkz-cyber.github.io/qarzhy/pilot/?results=1) shows submitted sessions and the median of participants' median times per method. The QA route (`?qa=1`) cannot submit a result.
+На главной черновик меняется по мере ввода. В форме «Жазба қосу» можно написать фразу или продиктовать её в поддерживаемом браузере. При низкой уверенности классификатор оставляет выбор пользователю. Для повторяющегося описания приложение может предложить ранее подтверждённую категорию. Сохранённые через ИИ записи помечены в истории значком «ИИ». [Логика приложения](js/app.js)
 
-## Features
+**Gemini — дополнительная возможность личного бюджета.** Для одиночной записи он может предложить поля, а для свободного вопроса — ответить по сводке. Чтобы включить его в своём браузере, в «Параметрлер» откройте «Жасанды интеллект (Gemini)», вставьте полный адрес своего веб-приложения Apps Script с окончанием `/exec` и нажмите «Сақтау және тексеру». Надпись «Проксимен байланыс бар» появляется после ответа модели. Ключ хранится в свойствах Apps Script. Демо, семейная комната и запросы точных сумм по операциям используют локальную модель или расчёт по истории. [Подключение Gemini](apps-script/README.md) · [Код запросов к истории](js/budget-query.js)
 
-- Income and expense records with family member, category, note and date
-  (past dates allowed); click a record in the history to edit it.
-- Month switcher: every summary card can show any past month.
-- Monthly trend: income vs expenses for the last 6 months; click a month to open it.
-- Category limits: monthly caps per category, warnings at 80% and when exceeded.
-- Reminders: one-off or monthly payments; «Төленді» records the expense automatically.
-- History search plus income/expense filter.
-- Financial goal, income-drop scenario, budget / goal / purchase / loan calculators,
-  fraud checklist, achievements, articles and a rule-based assistant.
-- Export to CSV (opens in Excel), JSON backup and restore.
-- Demo mode with six months of sample data and a guided tour for presentations.
-- Light and dark theme, phone and desktop layouts.
+## Что измерено
 
-## AI
+- **Точность классификации — 86% (43 из 50)** на отдельной выборке, которую не использовали для настройки. В тесте разбора фраз у **28 из 28** совпали все четыре поля — тип операции, сумма, человек и категория. Это проверки локальной модели на размеченных примерах. [Скрипт оценки](ai/eval.js) · [Результаты и ошибки](ai/metrics.txt)
+- **Время ввода измеряется отдельно.** В пилоте участник вводит три учебные операции вручную и три с ИИ. Таймер приостанавливается в скрытой вкладке. После шести заданий участник видит своё время и число ошибок, затем решает, отправлять ли анонимный отчёт. В сводке — число отправленных прохождений и медианы времени. [Пройти пилот](https://foxfordkz-cyber.github.io/qarzhy/pilot/) · [Открыть текущие результаты](https://foxfordkz-cyber.github.io/qarzhy/pilot/?results=1)
 
-- **Live draft on the home screen.** Type a Kazakh or Russian phrase to preview the amount, person and category as you write. «Жазбаны тексеру» opens the editable entry form. An empty composer opens a sample draft in demo mode.
-- **«ИИ-мен жазу»** in the entry form: type or say one phrase
-  («Айгүл Магнумнан 12 500-ге азық-түлік алды») and the form fills itself:
-  income/expense, amount, family member, category, description. The person checks and saves.
-- **Category suggestion** under the description. For an exact repeat, the app can reuse the category from previous confirmed entries and labels its source. Conflicting earlier categories leave the choice to the model or the user.
-- **On-device model** (`js/ai.js`): naive Bayes over word stems and character 3-grams,
-  trained in the browser on 297 labelled Kazakh/Russian examples, plus a rule-based
-  parser for amounts and names. The parser accepts digits and spoken amounts such as «он екі мың бес жүз теңге» or «двенадцать тысяч пятьсот тенге». It leaves ambiguous amounts for review. The local model only auto-selects a label with a model score of at least 0.60. Browser speech recognition may use the browser vendor’s speech service.
-- **Budget questions** use the selected month. Ask «Кім ең көп жұмсады?» or «Сколько Айгүл потратила на продукты?». Exact amounts are computed on-device from the matching records. A quoted phrase searches descriptions. Other offline topics use labelled, predefined answers.
-- **Several records in one phrase.** Up to eight recognizable entries can be reviewed and saved together. Dates such as «кеше» and «вчера» apply to following entries until another day is specified. A payment with change requires confirmation of the actual expense.
-- **Gemini** (optional) through a Google Apps Script proxy (`apps-script/`), so the key is
-  never in the page. Enabling it in personal settings sends the phrase or the question and budget totals to the proxy. The sample family always stays local. The site falls back to the
-  on-device model when Gemini is not configured or does not answer.
-- Quality: `node ai/eval.js` (results in `ai/metrics.txt`): 86% accuracy on a fresh
-  hold-out set never used for tuning, 28/28 test phrases parsed fully.
+## Бюджет и хранение данных
 
-## Files
+- Расходы и доходы можно редактировать, искать и фильтровать. Есть сводка за выбранный месяц, график за шесть месяцев, лимиты по категориям, цели, напоминания об оплате, калькуляторы и сценарий изменения дохода.
+- Личный бюджет сохраняется в локальном хранилище браузера. Демо использует учебные записи в памяти. Есть экспорт CSV и резервная копия JSON.
+- Семейная комната шифрует данные на устройстве с помощью AES-GCM. Секрет для расшифровки находится во фрагменте ссылки после `#`. Владелец приглашения может читать и менять бюджет. Правки, внесённые без сети на ранее подключённом устройстве, синхронизируются после восстановления связи. [Клиент шифрования](js/family-room.js) · [Сервер и схема базы](service/)
+- При включённом Gemini одиночная фраза или вопрос с числовой сводкой отправляется через прокси в Google. Распознавание голоса зависит от службы браузера. После первого кэширования локальная модель и ранее открытый сайт доступны офлайн.
 
-- `index.html` — page markup.
-- `css/style.css` — styles.
-- `js/app.js` — app logic (plain JavaScript, no libraries).
-- `js/ai.js` — on-device AI model and phrase parser.
-- `js/budget-query.js` — interpretation of local ledger questions.
-- `ai/eval.js`, `ai/metrics.txt` — model evaluation.
-- Run the parser, synchronization, timing and API checks with Node.js 22.13 or newer using `node --test ai/*.test.js pilot/*.test.js service/*.test.mjs`.
-- `js/family-room.js` handles client-side encryption and offline edits. The relay source is in `service/`. To run your own instance, apply `schema.sql` to a D1 database, bind it to the worker as `DB`, and use `worker.mjs` as the entry point. Set the allowed frontend origin in `api.mjs` and the relay URL in `js/service-config.js`.
-- `apps-script/` — Gemini proxy for Google Apps Script and setup steps.
+## Запуск и проверки
 
-Personal data is stored in the browser's `localStorage` under `otbasy-budget:v1:*`
-(records, goal, limits, reminders, flags, theme). Demo data is generated in memory
-and never written there.
+Фронтенд — статический HTML, CSS и JavaScript. Сборка и установка пакетов для него не требуются. Из корня репозитория запустите сервер Python и откройте локальное демо. [Локальное демо](http://127.0.0.1:8000/?demo=batch)
 
-The frontend has no build step. Use HTTPS or localhost for encrypted sharing and offline caching. The public frontend uses GitHub Pages
-(Settings → Pages → Deploy from a branch → this branch, `/ (root)`).
-After the first online visit on HTTPS or localhost, the service worker caches the HTML, CSS and JavaScript so the site and the AI demo can also reopen offline. Only static application files are cached.
+```sh
+python -m http.server 8000 --bind 127.0.0.1
+```
+
+Для проверки модели, синхронизации, пилота и серверного API нужен Node.js 22.13 или новее.
+
+```sh
+node --test
+node ai/eval.js
+```
+
+Фронтенд опубликован на GitHub Pages из корня основной ветки `claude/eloquent-cray-63d865`. Для своего сервера примените `schema.sql` к базе D1, подключите её к `worker.mjs` под именем `DB` и укажите адрес API и разрешённый источник фронтенда. [Обработчик API](service/api.mjs) · [Схема](service/schema.sql) · [Точка входа](service/worker.mjs) · [Адрес сервиса в клиенте](js/service-config.js)
+
+## Материалы StartUp Battle — IT FEST 2026
+
+[Питч-дек (PDF)](competition/Otbasy-budget-pitch.pdf) · [AI-карта (PDF)](competition/ai-card.pdf) · [Бизнес-документы (PDF)](competition/business.pdf) · [Поля заявки и сценарий видеопитча](competition/application.md)
+
+Демо-видео показывает работу приложения. Для отдельного видеопитча нужны выступления участников. Перед подачей впишите сведения о команде и подтверждённые результаты в выделенные поля. Печатные макеты можно открыть с локального сервера в Chrome или Edge и сохранить через Ctrl+P → «Сохранить как PDF». Выберите масштаб 100%, включите фоновую графику и отключите колонтитулы. [Макет 12 слайдов](competition/deck/deck.html) · [Макет AI-карты](competition/deck/ai-card.html) · [Макет бизнес-документов](competition/deck/business.html)

@@ -1307,7 +1307,7 @@
     if (!aiEndpoint()) { pushMsg(answer(q), 'bot', 'Офлайн көмекші · дайын жауап'); return; }
     var typing = pushMsg('Жазып жатыр…', 'bot typing');
     var fallback = answer(q);
-    callAI({ task: 'ask', question: q.slice(0, 300), context: aiContext() }, 12000).then(function (r) {
+    callAI({ task: 'ask', question: q.slice(0, 300), context: aiContext() }).then(function (r) {
       if (!typing.isConnected) return;
       if (!r || typeof r.answer !== 'string' || !r.answer.trim()) throw new Error('empty');
       pushMsg(r.answer.trim().slice(0, 1200), 'bot', 'ИИ жауабы · ' + (r.model || 'Gemini') + ' · қателесуі мүмкін', typing);
@@ -1554,14 +1554,14 @@
       }
       if (!validEndpoint(v)) { status.textContent = 'Проксидің толық HTTPS мекенжайын енгізіңіз. Apps Script сілтемесі /exec деп аяқталады.'; return; }
       save.disabled = true; input.disabled = true;
-      status.textContent = 'Тексеріп жатырмыз…';
-      callAI({ task: 'ping' }, 12000, v).then(function (r) {
-        if (!r || !r.ok) throw new Error('unavailable');
+      status.textContent = 'Gemini жауабын күтеміз. Тексеру 30 секундқа дейін созылуы мүмкін…';
+      callAI({ task: 'ping' }, v).then(function (r) {
+        if (!r || r.ok !== true) throw new Error(r && typeof r.error === 'string' ? r.error : 'invalid_reply');
         if (!status.isConnected || !panel.open) return;
         try { localStorage.setItem(AI_EP_KEY, v); } catch (e) { status.textContent = 'Браузер параметрді сақтай алмады.'; return; }
         status.textContent = 'Проксимен байланыс бар · ' + (r.model || 'Gemini');
         renderAiMode();
-      }).catch(function () { status.textContent = 'Қосылу сәтсіз. Прокси сілтемесін, модель мен сервердегі API кілтін тексеріңіз.'; })
+      }).catch(function (error) { status.textContent = aiCheckError(error); })
         .finally(function () { save.disabled = false; input.disabled = false; });
     });
     return h('div', { class: 'field' }, h('label', { class: 'lbl', for: 'aiEndpointInput' }, 'Жасанды интеллект (Gemini)'),
@@ -1601,11 +1601,31 @@
     if (state.mode !== 'personal') return '';
     try { var value = localStorage.getItem(AI_EP_KEY); return validEndpoint(value) ? value : ''; } catch (e) { return ''; }
   }
-  function callAI(payload, ms, candidate) {
+  function aiCheckError(error) {
+    if (error.name === 'AbortError') return 'Google 30 секунд ішінде жауап бермеді. Тексеруді қайталап көріңіз.';
+    if (error.name === 'TypeError') return 'Браузер проксиге қосыла алмады. Интернетті және /exec сілтемесінің ашық екенін тексеріңіз.';
+    if (error.name === 'SyntaxError' || /^http (401|403|404)$/.test(error.message))
+      return 'Прокси ашылмады. Apps Script-та веб-қосымшаға барлығы кіре алатынын және сілтеменің /exec деп аяқталатынын тексеріңіз.';
+    switch (error.message) {
+      case 'GEMINI_API_KEY is not set in Script properties':
+        return 'Apps Script жоба сипаттарында GEMINI_API_KEY мәнін сақтаңыз.';
+      case 'gemini_http_404':
+        return 'Gemini моделін таба алмады. Apps Script-та GEMINI_MODEL мәнін тексеріңіз.';
+      case 'gemini_http_401':
+      case 'gemini_http_403':
+        return 'Google модельге кіруге рұқсат бермеді. AI Studio жобасындағы кілт пен модельге рұқсатты тексеріңіз.';
+      case 'rate_limited':
+      case 'gemini_http_429':
+        return 'Сұрау шегіне жеттіңіз. Сәлден кейін қайталаңыз. Қайталанса, AI Studio жобасының квотасын тексеріңіз.';
+      default:
+        return 'Проксиден растау келмеді. Apps Script-та орындалу журналын қарап, тексеруді қайталаңыз.';
+    }
+  }
+  function callAI(payload, candidate) {
     var ep = candidate || aiEndpoint();
     if (!ep) return Promise.reject(new Error('no endpoint'));
     var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
-    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms || 8000);
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 30000);
     return fetch(ep, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctrl ? ctrl.signal : undefined })
       .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
       .finally(function () { clearTimeout(timer); });
@@ -1809,7 +1829,7 @@
       return;
     }
     var btn = $('aiFill'); btn.disabled = true; setAiStatus('Gemini талдап жатыр…');
-    callAI({ task: 'parse', text: text.slice(0, 200) }, 8000).then(function (r) {
+    callAI({ task: 'parse', text: text.slice(0, 200) }).then(function (r) {
       if (version !== parseVersion) return;
       var g = validAI(r);
       if (!g) throw new Error('bad');

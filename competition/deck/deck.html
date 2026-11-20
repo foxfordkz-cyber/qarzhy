@@ -27,6 +27,7 @@ p { margin: 0; }
 .card { background: var(--surface); border-radius: 20px; padding: 26px 28px; box-shadow: 0 2px 10px rgba(15, 40, 27, .06); }
 .card p { color: var(--ink-2); font-size: 18px; }
 .big { font: 700 56px/1 Onest, sans-serif; letter-spacing: -0.03em; color: var(--accent-ink); }
+a { color: var(--accent-ink); text-underline-offset: .15em; }
 .muted { color: var(--ink-3); }
 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; font-size: 16px; }
 .shot { border-radius: 16px; box-shadow: 0 12px 40px rgba(15, 40, 27, .16); display: block; }
@@ -53,8 +54,8 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
 <section class="s" style="background: linear-gradient(120deg, #e2f3e9, #f3faf6 60%, #e2f3e9); justify-content: center;">
   <div class="eyebrow">StartUp Battle — IT FEST 2026 · Студенттер</div>
   <h1>Отбасы бюджеті</h1>
-  <p style="font-size: 30px; margin-top: 18px; max-width: 680px; color: var(--ink-2);">Шығысты бір сөйлеммен айтыңыз — жасанды интеллект өзі жазып, ақша қайда кеткенін көрсетеді.</p>
-  <p style="margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap;"><span class="pill">ИИ-ввод на казахском</span><span class="pill">Работает офлайн</span><span class="pill">foxfordkz-cyber.github.io/qarzhy</span></p>
+  <p style="font-size: 30px; margin-top: 18px; max-width: 680px; color: var(--ink-2);">Шығысты бір сөйлеммен айтыңыз. Жасанды интеллект жазбаларды дайындайды, сіз тексеріп, сақтайсыз.</p>
+  <p style="margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap;"><span class="pill">ИИ-ввод на казахском</span><span class="pill">Работает офлайн</span><a class="pill" href="https://foxfordkz-cyber.github.io/qarzhy/?demo=batch">Открыть демо</a></p>
   <p style="margin-top: 40px; max-width: 640px;" class="todo">[Команда: ФИО, вуз, курс — впишите]</p>
   <img src="deck-phone.jpg" style="position: absolute; right: 90px; top: 70px; height: 580px;" class="shot" alt="">
 </section>
@@ -62,11 +63,11 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
 <!-- 2 -->
 <section class="s">
   <div class="eyebrow">Проблема</div>
-  <h2>Семья не знает, куда уходят деньги — и бросает учёт через 2 недели</h2>
+  <h2>Как посчитать расходы семьи, если каждый платит отдельно?</h2>
   <div class="grid3">
-    <div class="card"><h3>Нет общей картины</h3><p>Тратят двое и больше, наличными и с разных карт. Остаток месяца становится ясен только когда денег уже нет.</p></div>
-    <div class="card"><h3>Банк видит не всё</h3><p>Аналитика Kaspi и Halyk показывает только операции своей карты: без наличных, других банков и без «кто сколько потратил».</p></div>
-    <div class="card"><h3>Ручной учёт долгий</h3><p>5 полей на каждую трату — 20–30 секунд на телефоне. Таблицы и тетради быстро забрасывают. На казахском почти ничего нет.</p></div>
+    <div class="card"><h3>Нет общей картины</h3><p>Один покупает продукты, другой оплачивает такси. Сумму видно только после того, как оба внесут свои траты.</p></div>
+    <div class="card"><h3>Банк видит не всё</h3><p>В выписке одной карты нет наличных покупок и платежей с карты другого члена семьи.</p></div>
+    <div class="card"><h3>Ручной учёт долгий</h3><p>Для каждой покупки нужно заполнить пять полей. В <a href="https://foxfordkz-cyber.github.io/qarzhy/pilot/">открытом пилоте</a> можно сравнить ручной ввод с одной фразой на казахском.</p></div>
   </div>
   <p class="todo" style="margin-top: 24px;">[Команда: добавьте 1–2 цитаты из интервью с семьями — жюри оценивает подтверждение проблемы]</p>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">2</div>
@@ -93,7 +94,7 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
         <li>Текстом или голосом, на казахском и русском</li>
         <li>Человек проверяет и нажимает «Сақтау» — ИИ сам ничего не сохраняет</li>
         <li>Сразу видно: остаток месяца, категории, кто сколько потратил, лимиты</li>
-        <li>Без регистрации, данные остаются на телефоне</li>
+        <li>Личный бюджет хранится на устройстве. Семейная комната шифрует записи перед отправкой на второй телефон.</li>
       </ul>
     </div>
   </div>
@@ -103,53 +104,53 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
 <!-- 4 -->
 <section class="s" style="padding-bottom: 40px;">
   <div class="eyebrow">Демо · работающий MVP</div>
-  <h2>Готовый продукт, а не макет</h2>
+  <h2>Две покупки одной фразой — 14 300 ₸</h2>
   <div style="display: flex; gap: 28px; flex: 1; min-height: 0; align-items: flex-start;">
-    <img src="deck-desktop.jpg" class="shot" style="width: 780px; height: auto;" alt="">
-    <img src="deck-form.jpg" class="shot" style="height: 470px; width: auto;" alt="">
+    <img src="deck-desktop.jpg" class="shot" style="width: 776px; height: auto;" alt="Демо семейного бюджета на компьютере">
+    <img src="deck-form.jpg" class="shot" style="height: 470px; width: auto;" alt="Два черновика расходов на телефоне">
   </div>
-  <p class="note" style="margin-top: 0;">Сводка месяца, диаграммы, история, лимиты, напоминания, цели, калькуляторы, демо-режим с туром · компьютер и телефон · светлая и тёмная тема</p>
+  <p class="note" style="margin-top: 0;">Айгүл — продукты за 12 500 ₸. Ерлан — такси за 1 800 ₸. После подтверждения обе траты можно открыть в истории. <a href="https://foxfordkz-cyber.github.io/qarzhy/?demo=batch">Попробовать на сайте</a></p>
   <div class="num">4</div>
 </section>
 
 <!-- 5 -->
 <section class="s">
   <div class="eyebrow">Роль ИИ</div>
-  <h2>ИИ — это ключевой сценарий: без него нет быстрого ввода</h2>
+  <h2>Как фраза превращается в записи бюджета</h2>
   <div class="flow">
     <div class="card"><h3>1. Фраза или голос</h3><p>Web Speech API (kk-KZ) или текст</p></div>
     <div class="arrow">→</div>
-    <div class="card" style="box-shadow: inset 0 0 0 2px var(--accent);"><h3>2. Своя модель на устройстве</h3><p>Наивный Байес: основы слов + символьные 3-граммы, 291 размеченный пример kk/ru. Суммы «12к, 450 мың, 1,2 млн», имена с казахскими падежами</p></div>
+    <div class="card" style="box-shadow: inset 0 0 0 2px var(--accent);"><h3>2. Своя модель на устройстве</h3><p>297 размеченных примеров. Классификатор различает доход и четыре категории расходов. Правила выделяют сумму, дату и имя.</p></div>
     <div class="arrow">→</div>
-    <div class="card"><h3>3. Gemini (опция)</h3><p>Сложные фразы → JSON по строгой схеме. Через прокси, ключ не на странице. Нет ответа → своя модель</p></div>
+    <div class="card"><h3>3. Gemini (опция)</h3><p>В личном бюджете можно подключить Gemini для одной записи и свободных вопросов. Ключ хранится в Apps Script.</p></div>
     <div class="arrow">→</div>
-    <div class="card"><h3>4. Человек</h3><p>Проверяет поля и сохраняет. Неуверенная категория (&lt; 60%) — выбирает сам</p></div>
+    <div class="card"><h3>4. Человек</h3><p>Проверяет предложенные поля, исправляет их и подтверждает сохранение.</p></div>
   </div>
-  <p style="margin-top: 26px; font-size: 20px;">Сверх готового API: собственная модель и разметка, работа без интернета, порог уверенности, разбор казахских падежей. ИИ-помощник отвечает по сводке месяца.</p>
+  <p style="margin-top: 26px; font-size: 20px;">До восьми операций в одной фразе разбираются на устройстве. На вопрос о расходах помощник считает сумму по истории и показывает, какие записи вошли в ответ.</p>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">5</div>
 </section>
 
 <!-- 6 -->
 <section class="s">
   <div class="eyebrow">Качество ИИ · измерено</div>
-  <h2>Метрики на данных, которые модель не видела</h2>
+  <h2>Как проверяли локальную модель</h2>
   <div class="grid3" style="grid-template-columns: repeat(4, 1fr);">
-    <div class="card"><div class="big">86%</div><p style="margin-top: 10px;">точность категорий на «свежей» выборке (50 описаний, не использовались при настройке)</p></div>
-    <div class="card"><div class="big">28/28</div><p style="margin-top: 10px;">тестовых фраз разобраны полностью: сумма, имя, тип, категория</p></div>
-    <div class="card"><div class="big">96%</div><p style="margin-top: 10px;">точность, когда модель уверена ≥ 60% (это 95% случаев); иначе выбирает человек</p></div>
-    <div class="card"><div class="big">0 ₸</div><p style="margin-top: 10px;">стоимость основного ввода: модель работает в браузере, без сервера</p></div>
+    <div class="card"><div class="big">86%</div><p style="margin-top: 10px;">43 из 50 категорий определены верно на отдельной выборке, которую не использовали при настройке</p></div>
+    <div class="card"><div class="big">28/28</div><p style="margin-top: 10px;">фраз с верно определёнными суммой, именем, типом и категорией</p></div>
+    <div class="card"><div class="big">96,5%</div><p style="margin-top: 10px;">точность среди примеров, прошедших порог 0,60. Таких примеров 94,7% из 150</p></div>
+    <div class="card"><div class="big">0 ₸</div><p style="margin-top: 10px;">плата за запрос к локальной модели. Для классификации достаточно браузера</p></div>
   </div>
-  <p style="margin-top: 24px; font-size: 18px;" class="muted">Скрипт оценки и результаты открыты: ai/eval.js, ai/metrics.txt. Ошибки: редкие слова («шаш қидыру»), суммы словами. Следующий шаг — замер Gemini и сбор реальных фраз пилота.</p>
+  <p style="margin-top: 24px; font-size: 18px;" class="muted">Пример ошибки — «ванна жөндеу» (ремонт ванны) модель отнесла к транспорту. Категорию можно исправить до сохранения. <a href="https://github.com/foxfordkz-cyber/qarzhy/blob/claude/eloquent-cray-63d865/ai/metrics.txt">Все результаты</a> · <a href="https://github.com/foxfordkz-cyber/qarzhy/blob/claude/eloquent-cray-63d865/ai/eval.js">Воспроизвести замер</a></p>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">6</div>
 </section>
 
 <!-- 7 -->
 <section class="s">
   <div class="eyebrow">Ответственный ИИ</div>
-  <h2>Данные семьи не уходят никуда без согласия</h2>
+  <h2>Что хранится на телефоне и что получает сервер</h2>
   <div class="grid2">
-    <div class="card"><h3>Приватность</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>История хранится только в браузере, сервера с базой нет</li><li>Gemini выключен по умолчанию; в него уходит только фраза или сводка месяца</li><li>Ключ API — в прокси Google Apps Script, не на странице</li></ul></div>
-    <div class="card"><h3>Контроль и прозрачность</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>Подпись «ИИ толтырды — тексеріңіз», значок «ИИ» в истории</li><li>Ответы помощника подписаны моделью; без советов по инвестициям и данных карт</li><li>Уровень риска по Закону РК «Об ИИ»: <b>минимальный</b> — решений о людях нет</li></ul></div>
+    <div class="card"><h3>Приватность</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>Личная история хранится в браузере. В общей комнате сервер хранит зашифрованный бюджет. Ключ находится в ссылке-приглашении.</li><li>По выбору пользователя Gemini получает текст одиночной записи либо вопрос с числовой сводкой.</li><li>Ключ Gemini хранится в свойствах Google Apps Script.</li></ul></div>
+    <div class="card"><h3>Контроль и прозрачность</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>Человек проверяет поля. В истории записи с помощью модели помечены значком «ИИ».</li><li>Помощник подписывает источник ответа. Для точной суммы по истории можно открыть исходные записи.</li><li>Самооценка риска — <b>минимальный</b>. Приложение не принимает решений о людях.</li></ul></div>
   </div>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">7</div>
 </section>
@@ -178,7 +179,7 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
     <tr><td>Казахский язык</td><td>Да</td><td>Нет</td><td>Нет</td><td>—</td><td class="us">Да</td></tr>
     <tr><td>ИИ-ввод фразой и голосом</td><td>Нет</td><td>Нет</td><td>Нет</td><td>Нет</td><td class="us">Да, kk/ru</td></tr>
     <tr><td>Регистрация, доступ к счетам</td><td>Аккаунт банка</td><td>Аккаунт</td><td>Аккаунт</td><td>Нет</td><td class="us">Не нужны</td></tr>
-    <tr><td>Цена</td><td>Бесплатно</td><td>Подписка</td><td>Freemium</td><td>Бесплатно</td><td class="us">Бесплатно + «Отбасы+»</td></tr>
+    <tr><td>Цена</td><td>Бесплатно</td><td>Подписка</td><td>Freemium</td><td>Бесплатно</td><td class="us">MVP бесплатно. Подписка в плане</td></tr>
   </table>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">9</div>
 </section>
@@ -188,11 +189,11 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
   <div class="eyebrow">Бизнес-модель</div>
   <h2>Freemium для семей + B2B-программы финансовой грамотности</h2>
   <div class="grid3">
-    <div class="card"><h3>Бесплатно</h3><p>Весь учёт, своя ИИ-модель, диаграммы, лимиты, напоминания, демо и калькуляторы.</p></div>
-    <div class="card" style="box-shadow: inset 0 0 0 2px var(--accent);"><h3>«Отбасы+» · 990 ₸/мес</h3><p>Синхронизация между телефонами семьи, Gemini-помощник, фото чека → запись, отчёты. Годовой план 7 900 ₸.</p></div>
-    <div class="card"><h3>B2B · 1,5–3 млн ₸/год</h3><p>Брендированная версия для банков, МФО, вузов и акиматов в программах финансовой грамотности.</p></div>
+    <div class="card"><h3>Бесплатно</h3><p>Учёт, локальная модель, зашифрованная комната для двух телефонов, диаграммы, лимиты и напоминания.</p></div>
+    <div class="card" style="box-shadow: inset 0 0 0 2px var(--accent);"><h3>«Отбасы+» · 990 ₸/мес</h3><p>Гипотеза подписки за ввод по фото чека и расширенные отчёты. Предполагаемая цена на год — 7 900 ₸.</p></div>
+    <div class="card"><h3>B2B · 1,5–3 млн ₸/год</h3><p>Гипотеза лицензии для банков, МФО, вузов и акиматов, которые ведут программы финансовой грамотности.</p></div>
   </div>
-  <p style="margin-top: 22px; font-size: 18px;">Юнит-экономика (допущения): доход ~800 ₸ с платящей семьи; затраты ИИ + сервер ≤ 28 ₸ на активную семью при основной работе своей модели; конверсия 3–5%. Безубыточность — около 30 000 активных семей и 3 B2B-контрактов.</p>
+  <p style="margin-top: 22px; font-size: 18px;">В плане заложено около 800 ₸ дохода в месяц с платящей семьи. При целевых затратах на ИИ и сервер до 28 ₸ на активную семью гипотеза безубыточности — около 30 000 активных семей и три B2B-контракта.</p>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">10</div>
 </section>
 
@@ -201,8 +202,8 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
   <div class="eyebrow">Тяга и план</div>
   <h2>Что уже есть и что дальше</h2>
   <div class="grid2">
-    <div class="card"><h3>Сейчас</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>MVP в открытом доступе, сделан и сдан по заказу</li><li>Своя ИИ-модель с открытыми метриками</li><li>Демо-режим и тур для показа</li></ul><p class="todo" style="margin-top: 14px;">[Команда: реальные пользователи / отзыв заказчика, если есть]</p></div>
-    <div class="card"><h3>24 месяца</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>1–3 мес: пилот 20–30 семей, замер ИИ на реальных фразах</li><li>4–6 мес: синхронизация, фото чека, запуск «Отбасы+» — 1 000 семей</li><li>7–12 мес: 10 000 семей, первый B2B-партнёр</li><li>13–24 мес: 50 000 семей, 3 B2B-контракта</li></ul></div>
+    <div class="card"><h3>Сейчас</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>Опубликованное приложение и демо с двумя тратами</li><li>Локальная модель с открытыми метриками и <a href="https://foxfordkz-cyber.github.io/qarzhy/?family=1">семейная комната</a></li><li><a href="https://foxfordkz-cyber.github.io/qarzhy/pilot/">Пилот на шести заданиях</a> и <a href="https://foxfordkz-cyber.github.io/qarzhy/pilot/?results=1">сводка добровольных прохождений</a></li></ul><p class="todo" style="margin-top: 14px;">[Команда: реальные пользователи / отзыв заказчика, если есть]</p></div>
+    <div class="card"><h3>Цели на 24 месяца</h3><ul style="font-size: 18px; color: var(--ink-2);"><li>1–3 мес: пилот 20–30 семей, замер ИИ на реальных фразах</li><li>4–6 мес: испытать ввод по фото чека и подписку, цель — 1 000 семей</li><li>7–12 мес: 10 000 семей, первый B2B-партнёр</li><li>13–24 мес: 50 000 семей, 3 B2B-контракта</li></ul></div>
   </div>
   <div class="brand"><span class="logo"></span>Отбасы бюджеті</div><div class="num">11</div>
 </section>
@@ -213,9 +214,9 @@ ul { margin: 0; padding-left: 22px; } li { margin: 6px 0; }
   <h2>Ищем пилот-партнёра и менторство</h2>
   <div class="grid2">
     <div class="card"><h3>Команда</h3><p class="todo">[Капитан — ФИО, вуз, курс, роль: продукт, аналитика, бизнес]</p><p class="todo" style="margin-top: 10px;">[Жансұлу — ФИО, вуз, курс, роль]</p><p style="margin-top: 14px; font-size: 16px;">В работе использовали ИИ-ассистенты для кода и текстов — раскрыто в AI-карте.</p></div>
-    <div class="card"><h3>Запрос</h3><ul style="font-size: 19px; color: var(--ink-2);"><li>Пилот с банком, МФО или вузом в программе финансовой грамотности</li><li>Менторство по продукту и монетизации</li><li>Акселерация и грант на сервер синхронизации</li></ul></div>
+    <div class="card"><h3>Запрос</h3><ul style="font-size: 19px; color: var(--ink-2);"><li>Пилот с банком, МФО или вузом в программе финансовой грамотности</li><li>Менторство по продукту и монетизации</li><li>Акселерация и грант на эксплуатацию семейного сервиса и пилот</li></ul></div>
   </div>
-  <p style="margin-top: 26px; font-size: 24px; font-weight: 600; color: var(--accent-ink);">foxfordkz-cyber.github.io/qarzhy → «Сайтпен танысу»</p>
+  <p style="margin-top: 26px; font-size: 24px; font-weight: 600; color: var(--accent-ink);"><a href="https://foxfordkz-cyber.github.io/qarzhy/?demo=batch">Открыть демо с двумя тратами</a> · <a href="https://foxfordkz-cyber.github.io/qarzhy/pilot/">Пройти пилот</a></p>
   <div class="num">12</div>
 </section>
 </body>

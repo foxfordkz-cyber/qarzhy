@@ -2,11 +2,11 @@
  * Otbasy Budget — Gemini proxy on Google Apps Script.
  *
  * The site never sees the Gemini API key: it calls this web app, and this script calls Gemini.
- * Setup (5 minutes, see apps-script/README.md):
+ * Setup (see apps-script/README.md):
  *   1. script.google.com → New project → paste this file.
  *   2. Project Settings → Script properties:
  *        GEMINI_API_KEY = <key from aistudio.google.com>
- *        GEMINI_MODEL   = gemini-2.5-flash   (optional; any model available to the key)
+ *        GEMINI_MODEL   = gemini-3.1-flash-lite (optional override for a compatible text model)
  *   3. Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone → copy the /exec URL.
  *   4. On the site: Параметрлер → Жасанды интеллект (Gemini) → paste the URL → Сақтау және тексеру.
  *
@@ -35,7 +35,7 @@ function doPost(e) {
   }
 }
 
-function model_() { return PROPS.getProperty('GEMINI_MODEL') || 'gemini-2.5-flash'; }
+function model_() { return PROPS.getProperty('GEMINI_MODEL') || 'gemini-3.1-flash-lite'; }
 
 function json(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 
