@@ -70,6 +70,7 @@
       </ul>
       <div class="nav-sep"></div>
       <ul class="nav">
+        <li><button class="nav-item" type="button" data-action="family"><span data-icon="people" data-size="20"></span>Ортақ бюджет</button></li>
         <li><button class="nav-item" type="button" data-action="settings"><span data-icon="gear" data-size="20"></span>Параметрлер</button></li>
         <li><button class="nav-item" type="button" data-action="tour"><span data-icon="play" data-size="20"></span>Сайтпен танысу</button></li>
         <li><button class="nav-item" type="button" data-action="help"><span data-icon="help" data-size="20"></span>Көмек орталығы</button></li>
@@ -106,6 +107,10 @@
     </nav>
 
     <main class="main" id="top">
+      <div class="room-banner" id="roomBanner" hidden>
+        <div><strong>Ортақ отбасы бюджеті</strong><p id="roomIndicator" role="status"></p></div>
+        <button type="button" class="btn btn-soft" data-action="family">Бөлмені басқару</button>
+      </div>
       <div class="demo-banner" id="demoBanner" role="status" hidden>
         <div class="db-text">
           <span class="db-ico" aria-hidden="true"><span data-icon="eye" data-size="18"></span></span>
@@ -134,7 +139,7 @@
           <form class="hero-text" id="quickForm">
             <h2 id="heroTitle">Бюджетті бір сөйлеммен жүргізіңіз</h2>
             <label class="quick-label" for="quickPhrase"><span data-icon="sparkle" data-size="16"></span>ИИ-мен жазу</label>
-            <textarea id="quickPhrase" rows="2" maxlength="160" placeholder="Айгүл Магнумнан 12 500-ге азық-түлік алды"></textarea>
+            <textarea id="quickPhrase" rows="2" maxlength="600" placeholder="Кеше Айгүл азық-түлікке 12 500 ₸, ал Ерлан таксиге 1 800 ₸ жұмсады"></textarea>
             <div class="hero-actions">
               <button class="btn btn-primary" type="submit"><span id="quickAction">Мысалды сынау</span><span data-icon="arrow" data-size="16"></span></button>
               <button class="link" data-action="tour" type="button"><span data-icon="play" data-size="15"></span>Сайтпен танысу</button>
@@ -144,7 +149,8 @@
             <div class="receipt" aria-live="polite" aria-atomic="true">
               <div class="receipt-head"><span data-icon="file" data-size="16"></span><span id="previewTitle">Үлгі жазба</span></div>
               <strong class="receipt-amount" id="previewAmount"></strong>
-              <dl>
+              <div id="previewBatch" hidden></div>
+              <dl id="previewSingle">
                 <div><dt>Түрі</dt><dd id="previewType"></dd></div>
                 <div><dt>Отбасы мүшесі</dt><dd id="previewMember"></dd></div>
                 <div><dt>Санат</dt><dd id="previewCategory"></dd></div>
@@ -367,7 +373,8 @@
       </div>
 
       <footer class="foot">
-        <p>Деректер тек осы құрылғының браузерінде сақталады: басқа телефоннан не компьютерден ашсаңыз, жазбалар көрінбейді.</p>
+        <a class="link" href="pilot/">Қолмен және ИИ-мен енгізуді салыстыру</a>
+        <p>Жеке жазбалар осы браузерде сақталады. Ортақ бөлмедегі бюджет шақыру сілтемесі бар құрылғылар арасында шифрланып синхрондалады.</p>
         <p class="warn" id="storageWarn" hidden>Браузер деректерді сақтауға рұқсат бермеді, сондықтан жазбалар бетті жапқанда өшеді. Жасырын (инкогнито) режимнен шығып, қайта ашып көріңіз.</p>
       </footer>
     </main>
@@ -386,7 +393,7 @@
     <div class="ai-box" id="aiBox">
       <label class="ai-label" for="aiText"><span data-icon="sparkle" data-size="16"></span>ИИ-мен жазу</label>
       <div class="ai-row">
-        <input class="input" id="aiText" autocomplete="off" maxlength="160" placeholder="Мысалы: Айгүл Магнумнан 12 500-ге азық-түлік алды">
+        <textarea class="input" id="aiText" rows="2" autocomplete="off" maxlength="600" placeholder="Мысалы, Айгүл азық-түлікке 12 500 теңге, ал Ерлан таксиге 1 800 теңге жұмсады"></textarea>
         <button class="icon-btn ai-mic" id="aiMic" type="button" aria-label="Дауыспен айту" title="Дауыспен айту" hidden><span data-icon="mic" data-size="20"></span></button>
       </div>
       <button class="btn btn-soft btn-block" id="aiFill" type="button"><span data-icon="sparkle" data-size="16"></span>Өрістерді толтыру</button>
@@ -395,7 +402,12 @@
       <p class="ai-note" id="entryMode"></p>
       <p class="ai-note" id="voiceNote" hidden>Дауысты браузер таниды. Дыбыс оның сөйлеуді тану қызметіне жіберілуі мүмкін.</p>
     </div>
-    <div class="or-sep"><span>Жазба деректері</span></div>
+    <div class="or-sep" id="entrySeparator"><span>Жазба деректері</span></div>
+    <section id="batchFields" aria-label="Жазбаларды тексеру" hidden>
+      <div class="batch-original"><p id="batchSource"></p><button type="button" class="link" id="batchEditPhrase" aria-controls="aiBox" aria-expanded="false">Сөйлемді өзгерту</button></div>
+      <div id="batchRows"></div><p class="batch-total" id="batchTotal" aria-live="polite"></p>
+    </section>
+    <div class="single-fields" id="singleFields">
     <div class="seg" role="radiogroup" aria-label="Жазба түрі" aria-describedby="typeErr">
       <input type="radio" name="type" id="tExpense" value="expense" checked>
       <label for="tExpense">Шығыс</label>
@@ -442,6 +454,7 @@
         <input class="input" id="date" name="date" type="date" aria-describedby="dateErr">
         <p class="err" id="dateErr" hidden></p>
       </div>
+    </div>
     </div>
     <button class="btn btn-primary btn-lg btn-block" id="submitBtn" type="submit">Шығысты қосу</button>
     <p class="form-hint" id="formHint">Уақыты автоматты түрде қойылады. Өткен күнді де таңдауға болады.</p>
@@ -490,6 +503,8 @@
 
 <script src="js/ai.js"></script>
 <script src="js/budget-query.js"></script>
+<script src="js/service-config.js"></script>
+<script src="js/family-room.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,9 +1,11 @@
-/* Cache only the public app shell. Family records stay in localStorage. */
+/* Cache static screens. Invitations, ledger data and pilot responses never enter this cache. */
 'use strict';
 const scope = self.registration.scope;
 const prefix = 'otbasy-shell:' + new URL(scope).pathname + ':';
-const cacheName = prefix + '1';
-const shell = ['index.html', 'css/style.css', 'js/ai.js', 'js/budget-query.js', 'js/app.js'].map(path => new URL(path, scope).href);
+const cacheName = prefix + '2';
+const shell = ['index.html', 'css/style.css', 'js/ai.js', 'js/budget-query.js', 'js/service-config.js', 'js/family-room.js', 'js/app.js',
+  'pilot/index.html', 'pilot/style.css', 'pilot/study.js', 'pilot/app.js'].map(path => new URL(path, scope).href);
+const pilotDir = new URL('pilot/', scope).href;
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache =>
@@ -24,7 +26,7 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   url.search = '';
-  const key = url.href === scope ? shell[0] : url.href;
+  const key = url.href === scope ? shell[0] : url.href === pilotDir ? pilotDir + 'index.html' : url.href;
   if (!shell.includes(key)) return;
   event.respondWith((async () => {
     const cache = await caches.open(cacheName);

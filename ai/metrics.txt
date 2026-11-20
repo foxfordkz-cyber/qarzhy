@@ -1,4 +1,4 @@
-Training examples: 291, hold-out examples: 100
+Training examples: 297, hold-out examples: 100
 
 1) Classification (5 classes) accuracy: 98.0%  (98/100)
    Macro-F1: 98.0%
@@ -26,9 +26,9 @@ Training examples: 291, hold-out examples: 100
      - ванна жөндеу  →  transport (керек: home)
      - мектеп формасы  →  transport (керек: other)
      - шаш қидыру  →  transport (керек: other)
-   threshold 0.5: auto-filled 99.3% of cases, accuracy among them 94.0%
-   threshold 0.6: auto-filled 95.3% of cases, accuracy among them 95.8%
-   threshold 0.7: auto-filled 95.3% of cases, accuracy among them 95.8%
+   threshold 0.5: auto-filled 98.7% of cases, accuracy among them 94.6%
+   threshold 0.6: auto-filled 94.7% of cases, accuracy among them 96.5%
+   threshold 0.7: auto-filled 94.7% of cases, accuracy among them 96.5%
    threshold 0.8: auto-filled 93.3% of cases, accuracy among them 96.4%
 
 2) Phrase parsing, 28 phrases:

@@ -291,26 +291,63 @@
     histType: 'all',
     histScope: null,
     demoEntryId: null,
+    demoBatchIds: [],
+    demoReturn: 'personal',
     bellSeen: ''
   };
+  function emptyFamily() { return { records: [], reminders: [], limits: {}, flags: {}, goal: null }; }
+  var family = emptyFamily();
   function isDemo() { return state.mode === 'demo'; }
-  function records() { return isDemo() ? state.demo : state.personal; }
-  function goal() { return isDemo() ? state.demoGoal : state.goal; }
-  function flags() { return isDemo() ? state.demoFlags : state.flags; }
-  function limits() { return isDemo() ? state.demoLimits : state.limits; }
-  function rems() { return isDemo() ? state.demoReminders : state.reminders; }
-  function saveLimits(l) {
-    if (isDemo()) { state.demoLimits = l; return; }
+  function isFamily() { return state.mode === 'family'; }
+  function records() { return isFamily() ? family.records : isDemo() ? state.demo : state.personal; }
+  function goal() { return isFamily() ? family.goal : isDemo() ? state.demoGoal : state.goal; }
+  function flags() { return isFamily() ? family.flags : isDemo() ? state.demoFlags : state.flags; }
+  function limits() { return isFamily() ? family.limits : isDemo() ? state.demoLimits : state.limits; }
+  function rems() { return isFamily() ? family.reminders : isDemo() ? state.demoReminders : state.reminders; }
+  function roomWrite(ops) {
+    try { if (ops.length) FamilyRoom.apply(ops); return true; }
+    catch (err) { toast(roomError(err.code), true); return false; }
+  }
+  function saveLimits(l, original) {
+    if (isFamily()) {
+      var before = original || family.limits;
+      return roomWrite(CAT_ORDER.filter(function (k) { return l[k] !== before[k]; }).map(function (k) { return { key: 'limit:' + k, value: l[k] || 0 }; }));
+    }
+    if (isDemo()) { state.demoLimits = l; return true; }
     state.limits = l;
     if (Object.keys(l).length) writeJSON(LIMITS_KEY, l); else { try { localStorage.removeItem(LIMITS_KEY); } catch (e) {} }
+    return true;
   }
-  function saveRems() { if (!isDemo()) writeJSON(REM_KEY, state.reminders); }
   function setFlag(k) {
-    if (isDemo()) state.demoFlags[k] = true;
+    if (isFamily()) { if (!family.flags[k] && !roomWrite([{ key: 'flag:' + k, value: true }])) return; }
+    else if (isDemo()) state.demoFlags[k] = true;
     else if (!state.flags[k]) { state.flags[k] = true; writeJSON(FLAGS_KEY, state.flags); }
     renderAchievements(summarize());
   }
-  function commit() { if (!isDemo()) writeJSON(KEY, state.personal); render(); }
+  // A reviewed group of transactions (and a paid reminder, if applicable) is one room edit.
+  function saveItems(recordEdits, reminderEdits) {
+    recordEdits = recordEdits || []; reminderEdits = reminderEdits || [];
+    if (isFamily()) {
+      var ops = recordEdits.map(function (e) { return { key: 'record:' + e.id, value: e.value }; })
+        .concat(reminderEdits.map(function (e) { return { key: 'reminder:' + e.id, value: e.value }; }));
+      if (!roomWrite(ops)) return false;
+    } else {
+      function apply(list, edits) {
+        var map = new Map(list.map(function (v) { return [v.id, v]; }));
+        edits.forEach(function (edit) { if (edit.value == null) map.delete(edit.id); else map.set(edit.id, edit.value); });
+        return Array.from(map.values());
+      }
+      if (recordEdits.length) {
+        if (isDemo()) state.demo = apply(state.demo, recordEdits);
+        else { state.personal = apply(storageOk ? readStore() : state.personal, recordEdits); writeJSON(KEY, state.personal); }
+      }
+      if (reminderEdits.length) {
+        if (isDemo()) state.demoReminders = apply(state.demoReminders, reminderEdits);
+        else { state.reminders = apply(storageOk ? readReminders() : state.reminders, reminderEdits); writeJSON(REM_KEY, state.reminders); }
+      }
+    }
+    render(); return true;
+  }
 
   function knownNames() {
     var counts = {}, display = {};
@@ -375,7 +412,9 @@
     [].forEach.call(document.querySelectorAll('[data-action="demo"]'), function (b) { b.hidden = demo; });
     $('mbarDemo').hidden = !demo;
     $('familyName').textContent = demo ? 'Ерлан мен Мәдина' : 'Біздің отбасы';
-    $('familySub').textContent = demo ? 'Мысал отбасы' : 'Жеке бюджет';
+    $('familySub').textContent = demo ? 'Мысал отбасы' : isFamily() ? 'Ортақ бюджет' : 'Жеке бюджет';
+    $('roomBanner').hidden = !isFamily();
+    $('exitDemoBtn').textContent = state.demoReturn === 'family' ? 'Ортақ бюджетке оралу' : 'Өз бюджетіме оралу';
   }
 
   /* ---------- month switcher ---------- */
@@ -525,7 +564,7 @@
     var save = h('button', { class: 'btn btn-primary', type: 'button', onclick: function () {
       var l = {};
       CAT_ORDER.forEach(function (k) { var v = digits(inputs[k].value); if (v > 0) l[k] = Math.min(v, MAX_AMOUNT); });
-      saveLimits(l); panel.close(); render();
+      if (!saveLimits(l, cur)) return; panel.close(); render();
       toast(Object.keys(l).length ? 'Лимиттер сақталды' : 'Лимиттер өшірілді');
     } }, 'Сақтау');
     openPanel('Санат лимиттері', 'Әр санатқа айлық шығыс шегін қойыңыз', [
@@ -658,7 +697,10 @@
     $('demoFollowup').hidden = !demoEntry || !!scope || !!q || state.histType !== 'all';
     if (demoEntry) {
       var key = monthKey(new Date(demoEntry.createdAt));
-      $('demoBalance').textContent = demoEntry.member + ' · ' + money(demoEntry.amount) + ' · ' + monthTitle(key) + ' · Қалдық ' + money(summarize(key).bal);
+      var group = all.filter(function (r) { return state.demoBatchIds.includes(r.id); });
+      $('demoBalance').textContent = (group.length > 1 ? group.length + ' жазба · ' + batchSummary(group) : demoEntry.member + ' · ' + money(demoEntry.amount)) +
+        ' · ' + monthTitle(key) + ' · Қалдық ' + money(summarize(key).bal);
+      $('askAboutEntry').textContent = group.length > 1 ? 'Осы жазбаларды көру' : 'Көмекшіден сұрау';
     }
     $('histType').hidden = !all.length;
     $('histCount').textContent = list.length;
@@ -788,24 +830,20 @@
     $('bellBtn').setAttribute('aria-label', urgent.length ? 'Ескертпелер: ' + urgent.length + ' шұғыл' : 'Ескертпелер');
   }
   function doneReminder(r) {
-    var list = rems();
+    var entries = [], due = dueDate(r);
     if (r.amount) {
-      var rec = { id: uid(), type: 'expense', amount: r.amount, member: knownNames()[0] || 'Отбасы', note: r.title, category: r.category || 'other', createdAt: new Date().toISOString() };
-      records().push(rec);
+      var rec = { id: 'pay-' + r.id + '-' + ymd(due), type: 'expense', amount: r.amount, member: knownNames()[0] || 'Отбасы', note: r.title, category: r.category || 'other', createdAt: new Date().toISOString() };
+      entries.push({ id: rec.id, value: rec });
       state.flashId = rec.id;
     }
-    if (r.monthly) r.paidKey = monthKey(dueDate(r));
-    else { var i = list.indexOf(r); if (i >= 0) list.splice(i, 1); }
-    saveRems();
     state.viewMonth = nowKey();
-    commit();
+    if (!saveItems(entries, [{ id: r.id, value: r.monthly ? Object.assign({}, r, { paidKey: monthKey(due) }) : null }])) return;
     refreshRemPanel();
     toast(r.amount ? 'Шығысқа жазылды: −' + fmtNum(r.amount) + NB + '₸' : 'Орындалды деп белгіленді');
   }
   function deleteReminder(r) {
-    var list = rems(), i = list.indexOf(r);
-    if (i < 0) return;
-    list.splice(i, 1); saveRems(); render(); refreshRemPanel();
+    if (!saveItems([], [{ id: r.id, value: null }])) return;
+    refreshRemPanel();
     toast('Ескертпе өшірілді');
   }
   function openAllReminders() {
@@ -855,7 +893,7 @@
         if (monthKey(d) > nowKey()) r.paidKey = monthKey(d) - 1;
       } else r.date = ymd(d);
       if (a) { r.amount = Math.min(a, MAX_AMOUNT); r.category = cat; }
-      rems().push(r); saveRems();
+      if (!saveItems([], [{ id: r.id, value: r }])) return;
       panel.close(); render();
       setFlag('reminder');
       toast('Ескертпе қосылды');
@@ -985,6 +1023,7 @@
   var HOUSE_SVG = '<svg viewBox="0 0 120 100" aria-hidden="true"><ellipse cx="60" cy="94" rx="54" ry="6" fill="var(--ill-shadow)"/><circle cx="100" cy="66" r="13" fill="var(--ill-leaf-2)"/><rect x="98" y="74" width="4" height="20" rx="1" fill="var(--ill-leaf-3)"/><rect x="22" y="50" width="64" height="44" rx="3" fill="var(--surface)"/><path d="M14 54 L54 22 L94 54 Z" fill="var(--accent)"/><path d="M14 54 L54 22 L94 54" stroke="var(--accent-hover)" stroke-width="3" fill="none" stroke-linejoin="round"/><rect x="46" y="68" width="16" height="26" rx="2" fill="var(--ill-coin-d)"/><rect x="29" y="62" width="12" height="12" rx="2" fill="var(--ill-sky)"/><rect x="67" y="62" width="12" height="12" rx="2" fill="var(--ill-sky)"/><rect x="70" y="30" width="8" height="14" fill="var(--accent-hover)"/></svg>';
   function renderGoal(s) {
     var box = $('goalBox');
+    if (state.editingGoal && box.querySelector('.goal-form')) return;
     box.textContent = '';
     var g = goal();
     if (state.editingGoal) { box.appendChild(goalForm(g)); return; }
@@ -1029,9 +1068,10 @@
     return f;
   }
   function saveGoal(g) {
-    state.editingGoal = false;
-    if (isDemo()) state.demoGoal = g;
+    if (isFamily()) { if (!roomWrite([{ key: 'goal', value: g || false }])) return; }
+    else if (isDemo()) state.demoGoal = g;
     else { state.goal = g; try { if (g) localStorage.setItem(GOAL_KEY, JSON.stringify(g)); else localStorage.removeItem(GOAL_KEY); } catch (e) {} }
+    state.editingGoal = false;
     render();
     toast(g ? 'Мақсат сақталды' : 'Мақсат өшірілді');
   }
@@ -1150,6 +1190,7 @@
   var SUGS = ['Азық-түлікке қанша жұмсадық?', 'Кім ең көп жұмсады?', 'Өткен аймен салыстыршы', 'Лимиттерім қалай?'];
   var RU_CATS = { food: 'Продукты', transport: 'Транспорт', home: 'Жильё', other: 'Прочее' };
   function inScope(record, scope) {
+    if (scope.ids) return scope.ids.includes(record.id);
     return monthKey(new Date(record.createdAt)) === scope.month &&
       (!scope.type || record.type === scope.type) &&
       (!scope.member || lower(record.member) === lower(scope.member)) &&
@@ -1157,6 +1198,7 @@
       (!scope.note || lower(record.note || '').includes(lower(scope.note)));
   }
   function scopeLabel(scope, ru) {
+    if (scope.ids) return 'Бірге қосылған жазбалар';
     var period = ru ? keyDate(scope.month).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }) : monthTitle(scope.month);
     return [period, scope.member, scope.category && (ru ? RU_CATS[scope.category] : CATS[scope.category].name), scope.note && '«' + scope.note + '»'].filter(Boolean).join(' · ');
   }
@@ -1298,10 +1340,115 @@
   $('panelClose').addEventListener('click', function () { panel.close(); });
   panel.addEventListener('click', function (e) { if (e.target === panel) panel.close(); });
 
+  var roomModeKey = 'otbasy-budget:v1:selected-budget';
+  var familySignature = '', invited = '', roomReady = false, lastConflicts = 0;
+  function roomError(code) {
+    var errors = {
+      offline: 'Серверге қосыла алмадық. Интернетті тексеріңіз.', denied: 'Бұл шақыру жарамсыз немесе бөлме жабылған.',
+      invalid: 'Шақыру сілтемесін толық көшіріңіз.', crypto: 'Бұл браузерде шифрлау қолжетімсіз. Сайтты HTTPS арқылы ашыңыз.',
+      pending: 'Бұл құрылғыда жіберілмеген өзгерістер бар. Интернет қосылғанда күте тұрыңыз.',
+      full: 'Бөлменің дерек көлемі шегіне жетті.', storage: 'Браузер деректерді сақтай алмады. Бос орынды және сақтау рұқсатын тексеріңіз.',
+      integrity: 'Бөлменің деректерін осы кілтпен аша алмадық.', corrupt: 'Құрылғыдағы бюджет көшірмесін оқу мүмкін болмады.',
+      rate: 'Сұраулар жиілеп кетті. Сәлден кейін автоматты түрде қайталаймыз.', active: 'Алдымен ашық бөлмеден шығыңыз.',
+      busy: 'Қосылу аяқталғанша күте тұрыңыз.', deleted: 'Осы жазбаны басқа құрылғы өшірді.',
+      changed: 'Осы браузерде таңдалған бөлме өзгерді.', unavailable: 'Синхрондау қызметі қолжетімсіз.'
+    };
+    return errors[code] || 'Синхрондау сәтсіз. Қайта байқап көріңіз.';
+  }
+  function roomStatusText(info) {
+    if (info.phase === 'offline') return info.pending ? 'Офлайн · Өзгерістер құрылғыда сақталды. Интернет қосылғанда жіберіледі.' : 'Офлайн · Соңғы сақталған көшірме';
+    if (info.error) return roomError(info.error);
+    if (info.pending) return 'Өзгерістер осы құрылғыда сақталды · Синхрондалуда…';
+    if (info.phase === 'online') return 'Синхрондалды · Отбасы мүшелеріне қолжетімді';
+    return 'Қосылуда…';
+  }
+  function selectBudget(mode) {
+    closeEntry(); closeMenu(); endTour();
+    if (panel.open) panel.close();
+    state.mode = mode; state.demoReturn = mode; state.demo = []; state.demoReminders = [];
+    writeJSON(roomModeKey, mode);
+    resetView(); resetForm(); resetChat(); setQuery(''); render();
+  }
+  function updateFamily(info) {
+    var cells = FamilyRoom.view(), signature = JSON.stringify(cells);
+    var changed = signature !== familySignature;
+    if (changed) {
+      familySignature = signature; family = emptyFamily();
+      Object.keys(cells).forEach(function (key) {
+        var value = cells[key], cut = key.indexOf(':'), kind = key.slice(0, cut), id = key.slice(cut + 1);
+        if (kind === 'record' && isValid(value) && value.id === id && (!value.note || typeof value.note === 'string')) family.records.push(value);
+        else if (kind === 'reminder' && validRem(value) && value.id === id) family.reminders.push(cleanRem(value));
+        else if (kind === 'limit' && CAT_ORDER.includes(id) && Number.isFinite(value) && value > 0) family.limits[id] = Math.min(value, MAX_AMOUNT);
+        else if (kind === 'flag' && ['read', 'safety', 'reminder'].includes(id) && value === true) family.flags[id] = true;
+        else if (key === 'goal' && validGoal(value)) family.goal = { name: value.name.slice(0, 40), target: value.target };
+      });
+    }
+    if (info.active && isFamily() && changed) render();
+    if (roomReady && !info.active && info.phase === 'idle' && isFamily()) selectBudget('personal');
+    $('roomIndicator').textContent = roomStatusText(info);
+    if (panel.open && panel.dataset.kind === 'family' && $('roomStatus')) $('roomStatus').textContent = info.active ? roomStatusText(info) : '';
+    if (info.conflicts > lastConflicts && isFamily()) toast('Бір жазба екі құрылғыда өзгерді. Соңғы нұсқасын тарихтан тексеріңіз.');
+    lastConflicts = info.conflicts || 0;
+  }
+  function inviteFragment(raw) {
+    var text = raw.trim(), valid = /^#family=[A-Za-z0-9_-]{43}$/;
+    if (valid.test(text)) return text;
+    try {
+      var url = new URL(text), here = new URL('./', location.href);
+      if (url.origin === here.origin && (url.pathname === here.pathname || url.pathname === here.pathname + 'index.html') && valid.test(url.hash)) return url.hash;
+    } catch (e) { /* Plain text is not an invitation. */ }
+    return '';
+  }
+  function openFamily() {
+    var info = FamilyRoom.status(), ownInvite = FamilyRoom.invite();
+    var nodes = [], status = h('p', { class: 'dlg-note', role: 'status', id: 'roomStatus' }, info.active ? roomStatusText(info) : '');
+    function button(id, label, primary, action) {
+      return h('button', { id: id, class: 'btn ' + (primary ? 'btn-primary' : 'btn-ghost'), type: 'button', onclick: action }, label);
+    }
+    function connect(fn) {
+      var buttons = panel.querySelectorAll('#panelBody button');
+      buttons.forEach(function (b) { b.disabled = true; }); status.textContent = 'Қосылуда…';
+      fn().then(function () {
+        invited = ''; selectBudget('family'); openFamily();
+      }).catch(function (err) {
+        status.textContent = roomError(err.code); buttons.forEach(function (b) { b.disabled = false; });
+      });
+    }
+    if (info.active) {
+      var address = new URL('./', location.href); address.hash = ownInvite;
+      var invite = h('input', { id: 'roomInvite', class: 'input', type: 'text', readonly: true, value: address.href, autocomplete: 'off', spellcheck: 'false' });
+      var copy = button('roomCopy', 'Сілтемені көшіру', true, async function () {
+        try { await navigator.clipboard.writeText(invite.value); toast('Шақыру сілтемесі көшірілді'); }
+        catch (e) { invite.focus(); invite.select(); status.textContent = 'Сілтеме таңдалды. Көшіріп, отбасы мүшесіне жіберіңіз.'; }
+      });
+      nodes.push(h('p', { class: 'dlg-lead' }, 'Екінші телефонда осы сілтемені ашып, «Бөлмеге қосылу» батырмасын басыңыз. Сілтемесі бар адам ортақ бюджетті көре және өзгерте алады.'),
+        h('div', { class: 'field' }, h('label', { class: 'lbl', for: 'roomInvite' }, 'Отбасылық шақыру сілтемесі'), invite), copy,
+        button('roomSwitch', isFamily() ? 'Жеке бюджетке өту' : 'Ортақ бюджетті ашу', false, function () { selectBudget(isFamily() ? 'personal' : 'family'); }),
+        button('roomLeave', 'Осы құрылғыда бөлмеден шығу', false, function () {
+          try { FamilyRoom.leave(); if (!invited) selectBudget('personal'); openFamily(); }
+          catch (err) { status.textContent = roomError(err.code); }
+        }));
+      if (invited && invited !== ownInvite) nodes.unshift(h('p', { class: 'dlg-note' }, 'Сіз басқа бөлмеге шақырылдыңыз. Қазіргі бөлмеге оралу үшін оның сілтемесін сақтаңыз, содан кейін бөлмеден шығыңыз.'));
+    } else {
+      var joinInput = h('input', { id: 'roomLink', class: 'input', type: 'text', autocomplete: 'off', spellcheck: 'false', placeholder: 'https://…/#family=…',
+        value: invited ? new URL('./', location.href).href + invited : '' });
+      var join = button('roomJoin', 'Бөлмеге қосылу', !!invited, function () {
+        var fragment = inviteFragment(joinInput.value);
+        if (!fragment) { status.textContent = roomError('invalid'); joinInput.focus(); return; }
+        connect(function () { return FamilyRoom.join(fragment); });
+      });
+      nodes.push(h('p', { class: 'dlg-lead' }, 'Жаңа отбасылық бюджет бос ашылады. Жазбалар, мақсат, лимиттер мен төлем еске салғыштары барлық қосылған құрылғыда көрінеді.'),
+        h('div', { class: 'field' }, h('label', { class: 'lbl', for: 'roomLink' }, 'Отбасынан келген сілтеме'), joinInput),
+        h('div', { class: 'room-actions' }, join, button('roomCreate', 'Жаңа бөлме ашу', !invited, function () { connect(FamilyRoom.create); })));
+    }
+    nodes.push(status, h('p', { class: 'dlg-note' }, 'Деректер серверге жіберілер алдында құрылғыда шифрланады. Кілт шақыру сілтемесінде сақталады. Жеке бюджетіңіз осы браузерде бөлек сақталады.'));
+    openPanel('Ортақ отбасы бюджеті', info.active ? 'Отбасылық бөлме' : 'Екі телефонда бір бюджет', nodes); panel.dataset.kind = 'family';
+  }
   function openSettings() {
     var dark = effectiveTheme() === 'dark';
     var confirmStep = false;
-    var wipe = h('button', { class: 'btn btn-ghost', type: 'button', disabled: isDemo() || !state.personal.length ? true : null }, 'Барлық жазбаларды өшіру');
+    var personalMode = state.mode === 'personal';
+    var wipe = h('button', { class: 'btn btn-ghost', type: 'button', disabled: !personalMode || !state.personal.length ? true : null }, 'Жеке жазбаларды өшіру');
     wipe.addEventListener('click', function () {
       if (!confirmStep) { confirmStep = true; wipe.className = 'btn btn-danger'; wipe.textContent = 'Иә, бәрін өшіру'; return; }
       state.personal = []; state.goal = null; state.flags = {}; state.limits = {}; state.reminders = [];
@@ -1316,15 +1463,15 @@
         h('div', { class: 'seg' },
           h('button', { type: 'button', class: dark ? null : 'is-on', onclick: function () { setTheme('light'); openSettings(); } }, 'Күндізгі'),
           h('button', { type: 'button', class: dark ? 'is-on' : null, onclick: function () { setTheme('dark'); openSettings(); } }, 'Түнгі'))),
+      dataBtn('people', 'Ортақ отбасы бюджеті', openFamily),
       aiSettingsField(),
       h('div', { class: 'field' }, h('span', { class: 'lbl' }, 'Деректер'),
-        h('p', { class: 'dlg-note' }, 'Жазбалар тек осы құрылғының браузерінде сақталады. Қазір сақталғаны: ' + state.personal.length + ' жазба.'),
-        wipe, isDemo() ? h('p', { class: 'muted', style: 'font-size:13px' }, 'Мысал режимінде өшіру қолжетімсіз.') : null),
+        h('p', { class: 'dlg-note' }, 'Ашық бюджетте ' + records().length + ' жазба бар.'), personalMode ? wipe : null),
       h('div', { class: 'field' }, h('span', { class: 'lbl' }, 'Экспорт және көшірме'),
         h('div', { class: 'data-btns' },
           dataBtn('download', 'Excel үшін жүктеу (CSV)', exportCSV, !records().length),
-          dataBtn('file', 'Резервтік көшірме жасау (JSON)', exportJSON, isDemo() || !state.personal.length),
-          dataBtn('upload', 'Көшірмеден қалпына келтіру', function () { $('importFile').click(); }, isDemo())),
+          dataBtn('file', 'Резервтік көшірме жасау (JSON)', exportJSON, isDemo()),
+          dataBtn('upload', 'Жеке бюджетті көшірмеден қалпына келтіру', function () { $('importFile').click(); }, !personalMode)),
         h('p', { class: 'muted', style: 'font-size:13px' }, 'Көшірме файлын басқа телефонда не компьютерде ашып, деректерді сол жерге көшіруге болады.'))
     ]);
   }
@@ -1350,12 +1497,12 @@
     toast('CSV файлы жүктелді: ' + (rows.length - 1) + ' жазба');
   }
   function exportJSON() {
-    var data = { app: 'otbasy-budget', version: 1, exportedAt: new Date().toISOString(), records: state.personal, goal: state.goal, limits: state.limits, reminders: state.reminders };
+    var data = { app: 'otbasy-budget', version: 1, exportedAt: new Date().toISOString(), records: records(), goal: goal(), limits: limits(), reminders: rems() };
     saveFile('otbasy-budget-koshirme-' + ymd(new Date()) + '.json', JSON.stringify(data, null, 2), 'application/json');
     toast('Резервтік көшірме жүктелді');
   }
   function importBackup(data) {
-    if (!data || typeof data !== 'object' || !Array.isArray(data.records)) return -1;
+    if (state.mode !== 'personal' || !data || typeof data !== 'object' || !Array.isArray(data.records)) return -1;
     var have = {};
     state.personal.forEach(function (r) { have[r.id] = true; });
     var added = data.records.filter(function (r) { return isValid(r) && !have[r.id]; }).map(function (r) {
@@ -1371,14 +1518,14 @@
       var ids = {};
       state.reminders.forEach(function (r) { ids[r.id] = true; });
       var more = data.reminders.filter(function (r) { return validRem(r) && !ids[r.id]; }).map(cleanRem);
-      if (more.length) { state.reminders = state.reminders.concat(more); saveRems(); }
+      if (more.length) { state.reminders = state.reminders.concat(more); writeJSON(REM_KEY, state.reminders); }
     }
     return added.length;
   }
   $('importFile').addEventListener('change', function () {
     var file = this.files && this.files[0];
     this.value = '';
-    if (!file || isDemo()) return;
+    if (!file || state.mode !== 'personal') return;
     if (file.size > 5e6) { toast('Файл тым үлкен', true); return; }
     var rd = new FileReader();
     rd.onload = function () {
@@ -1394,6 +1541,7 @@
     rd.readAsText(file);
   });
   function aiSettingsField() {
+    if (isFamily()) return h('p', { class: 'dlg-note' }, 'Отбасылық бөлмеде мәтінді осы құрылғыдағы модель талдайды.');
     if (isDemo()) return h('p', { class: 'dlg-note' }, 'Мысал режимінде ИИ құрылғыда жұмыс істейді. Gemini жеке бюджет параметрлерінде қосылады.');
     var input = h('input', { class: 'input', id: 'aiEndpointInput', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', value: aiEndpoint() || AI_DEFAULT_ENDPOINT });
     var status = h('p', { class: 'dlg-note', role: 'status' }, aiEndpoint() ? 'Gemini қосулы.' : 'Қазір құрылғыдағы модель қосулы.');
@@ -1427,7 +1575,7 @@
 
   function openHelp() {
     var faq = [
-      ['Деректерім қайда сақталады?', 'Жазбалар осы браузерде сақталады. Мәтінді жергілікті ИИ құрылғыда талдайды. Gemini қосылса, енгізген мәтін мен бюджет қорытындылары прокси арқылы Google-ға беріледі. Дауысты тану браузердің қызметіне байланысты.'],
+      ['Деректерім қайда сақталады?', 'Жеке бюджет осы браузерде сақталады. Ортақ бөлме құрылғылар арасында шифрланған күйде синхрондалады. Жеке бюджетте Gemini қосылса, енгізген мәтін мен бюджет қорытындылары прокси арқылы Google-ға беріледі. Дауысты тану браузердің қызметіне байланысты.'],
       ['Жазбаны қалай қосамын?', '«Жазба қосу» батырмасын басып, соманы, отбасы мүшесін және санатты таңдаңыз. Күні бүгінгі болып қойылады, қажет болса өткен күнді таңдаңыз.'],
       ['Қате жазбаны қалай түзетемін не өшіремін?', 'Түзету үшін операциялар тарихында жазбаның өзін басыңыз. Өшіру үшін оң жақтағы қоқыс жәшігі белгісін басып, жоюды растаңыз.'],
       ['Өткен айды қалай көремін?', '«Біздің қаржылық жағдайымыз» бөлігіндегі көрсеткілерді басыңыз немесе «Айлық динамика» графигінде айды таңдаңыз.'],
@@ -1450,7 +1598,7 @@
     } catch (e) { return false; }
   }
   function aiEndpoint() {
-    if (isDemo()) return '';
+    if (state.mode !== 'personal') return '';
     try { var value = localStorage.getItem(AI_EP_KEY); return validEndpoint(value) ? value : ''; } catch (e) { return ''; }
   }
   function callAI(payload, ms, candidate) {
@@ -1469,7 +1617,8 @@
   var EXAMPLES = [
     { label: 'Азық-түлік', text: 'Айгүл Магнумнан 12 500-ге азық-түлік алды' },
     { label: 'Көлік', text: 'Ерлан таксиге 1 800 теңге төледі' },
-    { label: 'Кіріс', text: 'Мәдинаға 320 мың жалақы түсті' }
+    { label: 'Кіріс', text: 'Мәдинаға 320 мың жалақы түсті' },
+    { label: 'Бір сөйлемде екі жазба', text: 'Кеше Айгүл азық-түлікке 12 500 теңге, ал Ерлан таксиге 1 800 теңге жұмсады' }
   ];
   function previousCategory(note) {
     var normalized = lower(note.trim()).replace(/\s+/g, ' ');
@@ -1482,14 +1631,40 @@
     return found.every(function (r) { return r.type === 'expense' && r.category === cat; }) ? cat : null;
   }
   function parseForBudget(text) {
-    var r = OtbasyAI.parsePhrase(text, knownNames());
-    var previous = r.type !== 'income' && previousCategory(r.note);
-    if (previous) { r.type = 'expense'; r.category = previous; r.previous = true; }
-    return r;
+    var result = OtbasyAI.parseEntries(text, knownNames());
+    if (!result.issue) result.entries.forEach(function (r) {
+      var previous = r.type !== 'income' && previousCategory(r.note);
+      if (previous) { r.type = 'expense'; r.category = previous; r.previous = true; }
+    });
+    return result;
+  }
+  function batchFigures(entries) {
+    if (!entries.every(function (r) { return r.type && r.amount > 0 && r.amount <= MAX_AMOUNT; })) return { label: 'Сомасы мен түрін нақтылаңыз', value: '' };
+    var total = entries.reduce(function (sum, r) { return sum + (r.type === 'income' ? r.amount : -r.amount); }, 0);
+    if (entries.every(function (r) { return r.type === 'expense'; })) return { label: 'Жалпы шығыс', value: money(-total) };
+    if (entries.every(function (r) { return r.type === 'income'; })) return { label: 'Жалпы кіріс', value: money(total) };
+    return { label: 'Қалдықтың өзгерісі', value: (total > 0 ? '+' : '') + money(total) };
+  }
+  function batchSummary(entries) {
+    var total = batchFigures(entries); return total.label + (total.value ? ' · ' + total.value : '');
   }
   function renderQuickPreview() {
     var text = $('quickPhrase').value.trim();
-    var r = text ? parseForBudget(text) : OtbasyAI.parsePhrase(EXAMPLES[0].text, []);
+    var result = text ? parseForBudget(text) : OtbasyAI.parseEntries(EXAMPLES[3].text, []);
+    var rows = result.entries, multi = rows.length > 1, r = rows[0] || {};
+    $('previewSingle').hidden = multi; $('previewBatch').hidden = !multi;
+    if (multi) {
+      var total = batchFigures(rows);
+      $('previewTitle').textContent = (text ? rows.length + ' жазба' : 'Мысал') + ' · ' + total.label;
+      $('previewAmount').textContent = total.value || '— ₸';
+      $('previewBatch').replaceChildren(...rows.map(function (item) {
+        var cat = item.type === 'income' ? 'Кіріс' : item.category ? CATS[item.category].name : 'Санатты таңдаңыз';
+        return h('div', null, h('span', null, (item.member || 'Кім?') + ' · ' + cat),
+          h('b', null, item.amount && item.amount <= MAX_AMOUNT ? money(item.amount) : '— ₸'));
+      }));
+      $('quickAction').textContent = text ? rows.length + ' жазбаны тексеру' : 'Мысалды сынау';
+      return;
+    }
     $('previewTitle').textContent = text ? 'ИИ ұсынған жазба' : 'Үлгі жазба';
     $('quickAction').textContent = text ? 'Жазбаны тексеру' : 'Мысалды сынау';
     $('previewAmount').textContent = r.amount && r.amount <= MAX_AMOUNT ? money(r.amount) : '— ₸';
@@ -1501,7 +1676,7 @@
   $('quickForm').addEventListener('submit', function (ev) {
     ev.preventDefault();
     var phrase = $('quickPhrase').value.trim();
-    if (!phrase) { startAiDemo(); return; }
+    if (!phrase) { startAiDemo(true); return; }
     openEntry(null, true);
     fromQuickForm = true;
     $('aiText').value = phrase; runAiFill();
@@ -1522,7 +1697,72 @@
   }
   function setAiStatus(text, warn) { var el = $('aiStatus'); el.hidden = !text; el.className = 'ai-status' + (warn ? ' is-warn' : ''); el.innerHTML = icon(warn ? 'bulb' : 'sparkle', 14); el.appendChild(h('span', null, text)); }
   function markFilled(id) { var el = $(id); el.classList.add('ai-filled'); setTimeout(function () { el.classList.remove('ai-filled'); }, 2500); }
+  function singleFields() {
+    $('batchFields').hidden = true; $('singleFields').hidden = false; $('batchRows').replaceChildren();
+    $('aiBox').hidden = false; $('entrySeparator').hidden = false;
+    $('formTitle').textContent = state.editingId ? 'Жазбаны өзгерту' : 'Жаңа жазба';
+    $('formHint').hidden = false;
+  }
+  function wholeTenge(value) {
+    var s = String(value).trim();
+    if (!/^(?:\d+|\d{1,3}(?:[\s\u202f]\d{3})+)$/.test(s)) return 0;
+    var amount = Number(s.replace(/\s/g, ''));
+    return Number.isSafeInteger(amount) && amount > 0 ? amount : 0;
+  }
+  function batchField(row, key) { return row.querySelector('[data-field="' + key + '"]'); }
+  function updateBatchTotal() {
+    var items = Array.from($('batchRows').children, function (row) {
+      var type = batchField(row, 'type').value, amount = wholeTenge(batchField(row, 'amount').value);
+      var cat = batchField(row, 'category').value, name = batchField(row, 'member').value.trim(), date = parseYMD(batchField(row, 'date').value);
+      row.querySelector('.batch-desc b').textContent = (name || 'Кім?') + ' · ' + (type === 'income' ? 'Кіріс' : cat && type === 'expense' ? CATS[cat].name : 'Санатты таңдаңыз');
+      row.querySelector('.batch-desc small').textContent = date ? dayLabel(date) : 'Күнді таңдаңыз';
+      row.querySelector('.batch-amount').textContent = amount && amount <= MAX_AMOUNT ? (type === 'income' ? '+' : type === 'expense' ? '−' : '') + money(amount) : '— ₸';
+      return { type: type, amount: amount };
+    });
+    $('batchTotal').textContent = items.length + ' жазба · ' + batchSummary(items);
+  }
+  function showBatch(entries) {
+    $('singleFields').hidden = true; $('batchFields').hidden = false;
+    $('aiBox').hidden = true; $('entrySeparator').hidden = true; $('formHint').hidden = true;
+    $('batchEditPhrase').setAttribute('aria-expanded', 'false'); $('batchSource').textContent = $('aiText').value.trim();
+    $('formTitle').textContent = 'ИИ ұсынған ' + entries.length + ' жазбаны тексеріңіз';
+    $('batchRows').replaceChildren();
+    function select(key, options, value) {
+      var el = h('select', { class: 'input', 'data-field': key, required: true },
+        [h('option', { value: '' }, 'Таңдаңыз')].concat(options.map(function (opt) { return h('option', { value: opt[0] }, opt[1]); })));
+      el.value = value || ''; return el;
+    }
+    entries.forEach(function (r, i) {
+      var type = select('type', [['expense', 'Шығыс'], ['income', 'Кіріс']], r.type);
+      var cat = select('category', CAT_ORDER.map(function (key) { return [key, CATS[key].name]; }), r.category);
+      var amount = h('input', { class: 'input', 'data-field': 'amount', inputmode: 'numeric', required: true, value: r.amount && r.amount <= MAX_AMOUNT ? fmtNum(r.amount) : '' });
+      var member = h('input', { class: 'input', 'data-field': 'member', maxlength: 24, required: true, value: r.member ? normalizeName(r.member) : '' });
+      var date = h('input', { class: 'input', type: 'date', 'data-field': 'date', required: true, max: ymd(new Date()), value: r.date || ymd(new Date()) });
+      var note = h('input', { class: 'input', 'data-field': 'note', maxlength: 60, value: r.note || '' });
+      var catLabel = h('label', null, 'Санат', cat);
+      function toggleCat() { cat.disabled = type.value === 'income'; catLabel.hidden = cat.disabled; }
+      type.addEventListener('change', toggleCat); toggleCat();
+      var fields = h('fieldset', { class: 'batch-row' },
+        h('legend', null, (i + 1) + '-жазба'), h('p', { class: 'batch-source' }, r.text),
+        h('label', null, 'Жазба түрі', type), h('label', null, 'Сома, ₸', amount), h('label', null, 'Отбасы мүшесі', member), catLabel,
+        h('label', null, 'Күні', date), h('label', null, 'Сипаттама', note));
+      var summary = h('summary', null, h('span', { class: 'batch-desc' }, h('b'), h('small')), h('span', { class: 'batch-amount' }));
+      $('batchRows').appendChild(h('details', { class: 'batch-item', 'data-batch-row': true }, summary, fields));
+    });
+    appliedPhrase = $('aiText').value.trim(); aiFilledBy = 'local';
+    $('submitBtn').textContent = entries.length + ' жазбаны сақтау'; updateBatchTotal();
+    setAiStatus('Құрылғыдағы ИИ ' + entries.length + ' жазбаны бөлді. Әрқайсысын тексеріп, бірге сақтаңыз.');
+    $('entry').scrollTop = 0;
+    if (document.activeElement && $('aiBox').contains(document.activeElement)) $('formTitle').focus({ preventScroll: true });
+  }
+  $('batchEditPhrase').addEventListener('click', function () {
+    var expand = $('aiBox').hidden; $('aiBox').hidden = !expand; this.setAttribute('aria-expanded', String(expand));
+    if (expand) { $('aiText').focus(); $('aiText').scrollIntoView({ block: 'nearest' }); }
+  });
+  $('batchRows').addEventListener('input', function (e) { e.target.setCustomValidity(''); updateBatchTotal(); });
+  $('batchRows').addEventListener('change', updateBatchTotal);
   function applyParse(r, source) {
+    singleFields();
     appliedPhrase = $('aiText').value.trim();
     $('tIncome').checked = r.type === 'income'; $('tExpense').checked = r.type === 'expense';
     $('typeErr').hidden = true;
@@ -1530,6 +1770,7 @@
     $('amount').value = r.amount && r.amount <= MAX_AMOUNT ? fmtNum(r.amount) : '';
     $('member').value = r.member ? normalizeName(r.member) : '';
     $('note').value = r.note || '';
+    if (r.date && (r.dateExplicit || !state.editingId)) $('date').value = r.date;
     clearErr('amount'); clearErr('member'); renderNameChips();
     if ($('amount').value) markFilled('amount');
     if (r.member) markFilled('member');
@@ -1553,10 +1794,20 @@
   }
   function runAiFill() {
     var text = $('aiText').value.trim();
-    var version = ++parseVersion;
+    cancelParse(); var version = parseVersion;
     if (!text) { setAiStatus('Бір сөйлем жазыңыз немесе микрофонды басып айтыңыз.', true); $('aiText').focus(); return; }
-    var local = parseForBudget(text);
-    if (!aiEndpoint()) { applyParse(local, 'local'); return; }
+    var result = parseForBudget(text);
+    if (result.issue === 'limit' || !result.entries.length || (state.editingId && result.entries.length > 1)) {
+      appliedPhrase = ''; aiFilledBy = null; singleFields(); syncType();
+      setAiStatus(result.issue === 'limit' ? 'Бір жолы 8 жазбаға дейін қосыңыз. Сөйлемді қысқартыңыз.' : 'Өңдеу үшін бір жазбаны енгізіңіз.', true); return;
+    }
+    if (result.entries.length > 1) { showBatch(result.entries); return; }
+    var local = result.entries[0];
+    if (result.issue || !aiEndpoint() || text.length > 200) {
+      applyParse(local, 'local');
+      if (result.issue) setAiStatus(result.issue === 'change' ? 'Төлем мен қайтарым бірге көрсетілген. Нақты жұмсалған соманы өзіңіз енгізіңіз.' : 'Сома бірмәнді емес. Нақты соманы өзіңіз енгізіңіз.', true);
+      return;
+    }
     var btn = $('aiFill'); btn.disabled = true; setAiStatus('Gemini талдап жатыр…');
     callAI({ task: 'parse', text: text.slice(0, 200) }, 8000).then(function (r) {
       if (version !== parseVersion) return;
@@ -1565,6 +1816,7 @@
       if (!g.member) g.member = local.member;
       // A cloud response cannot introduce a number that was absent or ambiguous in the phrase.
       g.amount = local.amount;
+      g.date = local.date; g.dateExplicit = local.dateExplicit;
       if (!g.category && g.type === 'expense' && local.type === 'expense') g.category = local.category;
       if (!g.note) g.note = local.note;
       applyParse(g, 'gemini');
@@ -1580,10 +1832,13 @@
       cancelParse();
       if (e.target !== $('aiText')) { appliedPhrase = $('aiText').value.trim(); setAiStatus('Өрістерді өзіңіз тексеріп, сақтай аласыз.'); }
     }
-    if (e.target === $('aiText')) setAiStatus(appliedPhrase && appliedPhrase !== e.target.value.trim() ? 'Сөйлем өзгерді. Өрістерді қайта толтырыңыз.' : '');
+    if (e.target === $('aiText')) {
+      if (!e.target.value.trim() && !$('batchFields').hidden) { singleFields(); appliedPhrase = ''; aiFilledBy = null; syncType(); }
+      setAiStatus(appliedPhrase && appliedPhrase !== e.target.value.trim() ? 'Сөйлем өзгерді. Өрістерді қайта толтырыңыз.' : '');
+    }
   });
   $('aiFill').addEventListener('click', runAiFill);
-  $('aiText').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runAiFill(); } });
+  $('aiText').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runAiFill(); } });
 
   /* voice input: the browser's speech recognition, Kazakh first */
   (function initMic() {
@@ -1637,7 +1892,7 @@
     var inc = currentType() === 'income';
     $('catField').hidden = inc;
     $('typeErr').hidden = true;
-    $('submitBtn').textContent = state.editingId ? 'Өзгерісті сақтау' : !currentType() ? 'Жазбаны сақтау' : inc ? 'Кірісті қосу' : 'Шығысты қосу';
+    if ($('batchFields').hidden) $('submitBtn').textContent = state.editingId ? 'Өзгерісті сақтау' : !currentType() ? 'Жазбаны сақтау' : inc ? 'Кірісті қосу' : 'Шығысты қосу';
     $('note').placeholder = inc ? 'Мысалы, жалақы' : 'Мысалы, апталық азық-түлік';
     clearErr('cat');
     if ($('catSuggest')) renderCatSuggest();
@@ -1677,10 +1932,52 @@
   function showErr(field, msg) { var e = $(field + 'Err'); e.textContent = msg; e.hidden = false; if (field !== 'cat') $(field).setAttribute('aria-invalid', 'true'); }
   function clearErr(field) { var e = $(field + 'Err'); if (e) { e.hidden = true; e.textContent = ''; } if (field !== 'cat') $(field).removeAttribute('aria-invalid'); }
 
+  function atDay(day, base) {
+    if (!day) return base.toISOString();
+    var date = new Date(day.getFullYear(), day.getMonth(), day.getDate(), base.getHours(), base.getMinutes(), base.getSeconds());
+    return new Date(Math.min(date.getTime(), Date.now())).toISOString();
+  }
+  function readBatch() {
+    var rows = Array.from($('batchRows').children), now = new Date(), result = [];
+    for (var row of rows) {
+      var type = batchField(row, 'type').value;
+      var amountInput = batchField(row, 'amount'), amount = wholeTenge(amountInput.value);
+      var nameInput = batchField(row, 'member'), member = normalizeName(nameInput.value);
+      var dayInput = batchField(row, 'date'), day = parseYMD(dayInput.value);
+      amountInput.setCustomValidity(amount > 0 && amount <= MAX_AMOUNT ? '' : '1 мен 100 000 000 аралығындағы бүтін соманы енгізіңіз.');
+      nameInput.setCustomValidity(member ? '' : 'Отбасы мүшесінің атын жазыңыз.');
+      dayInput.setCustomValidity(day && day <= startOfDay(now) ? '' : 'Бүгінгі немесе өткен күнді таңдаңыз.');
+      for (var el of row.querySelectorAll('select,input')) {
+        if (!el.disabled && !el.validity.valid) { row.open = true; el.reportValidity(); el.focus(); return null; }
+      }
+      result.push({ id: uid(), type: type, amount: amount, member: member, category: type === 'expense' ? batchField(row, 'category').value : null,
+        note: batchField(row, 'note').value.trim().replace(/\s+/g, ' ').slice(0, 60), createdAt: atDay(day, now), via: 'local' });
+    }
+    return result;
+  }
+  function finishReviewed(items, editing) {
+    if (!items.length || !saveItems(items.map(function (r) { return { id: r.id, value: r }; }))) return;
+    var mostRecent = items.reduce(function (a, b) { return a.createdAt >= b.createdAt ? a : b; });
+    var follow = isDemo() && !!aiFilledBy;
+    if (follow) {
+      state.demoEntryId = mostRecent.id; state.demoBatchIds = items.length > 1 ? items.map(function (r) { return r.id; }) : [];
+      setHistoryType('all'); setQuery('');
+    }
+    if (fromQuickForm) $('quickPhrase').value = '';
+    state.flashId = mostRecent.id; state.viewMonth = monthKey(new Date(mostRecent.createdAt));
+    state.editingId = null; aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false;
+    singleFields(); $('amount').value = ''; $('note').value = ''; $('aiText').value = ''; $('member').value = mostRecent.member;
+    document.querySelectorAll('input[name="cat"]').forEach(function (input) { input.checked = false; });
+    setAiStatus(''); syncType(); render();
+    toast(editing ? 'Жазба өзгертілді' : items.length > 1 ? items.length + ' жазба сақталды · ' + batchSummary(items)
+      : (mostRecent.type === 'income' ? 'Кіріс қосылды: +' : 'Шығыс қосылды: −') + fmtNum(mostRecent.amount) + NB + '₸');
+    closeEntry(); if (follow) goTo('histCard');
+  }
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     if ($('aiFill').disabled) { setAiStatus('Сөйлем әлі талданып жатыр. Нәтижені тексеріп, сақтаңыз.', true); return; }
     if ($('aiText').value.trim() && $('aiText').value.trim() !== appliedPhrase) { runAiFill(); return; }
+    if (!$('batchFields').hidden) { var batch = readBatch(); if (batch) finishReviewed(batch, false); return; }
     var type = currentType(), amount = digits($('amount').value), member = normalizeName($('member').value);
     var catEl = document.querySelector('input[name="cat"]:checked');
     var category = type === 'expense' ? (catEl ? catEl.value : '') : null;
@@ -1691,37 +1988,15 @@
     if (!member) { showErr('member', 'Кім екенін жазыңыз, мысалы: Айгүл'); bad = bad || $('member'); }
     if (type === 'expense' && !category) { showErr('cat', 'Санатты таңдаңыз'); bad = bad || $('cFood'); }
     var editing = state.editingId ? records().filter(function (r) { return r.id === state.editingId; })[0] : null;
+    if (state.editingId && !editing) { toast('Бұл жазба өшірілген.', true); closeEntry(); resetForm(); return; }
     var now = new Date(), day = parseYMD($('date').value), base = editing ? new Date(editing.createdAt) : now;
     if ($('date').value && !day) { showErr('date', 'Күнді дұрыс жазыңыз'); bad = bad || $('date'); }
     else if (day && day > startOfDay(now)) { showErr('date', 'Болашақ күнді таңдауға болмайды'); bad = bad || $('date'); }
     if (bad) { bad.focus(); return; }
-    /* keep the time of day: now for a new record, the original time when editing */
-    var when = day ? new Date(day.getFullYear(), day.getMonth(), day.getDate(), base.getHours(), base.getMinutes(), base.getSeconds()) : base;
-    if (when > now) when = now;
-    var note = $('note').value.trim().replace(/\s+/g, ' ').slice(0, 60), rec;
-    if (editing) {
-      rec = editing;
-      rec.type = type; rec.amount = amount; rec.member = member; rec.note = note; rec.category = category; rec.createdAt = when.toISOString();
-    } else {
-      rec = { id: uid(), type: type, amount: amount, member: member, note: note, category: category, createdAt: when.toISOString() };
-      records().push(rec);
-    }
+    var rec = Object.assign({}, editing, { id: editing ? editing.id : uid(), type: type, amount: amount, member: member,
+      note: $('note').value.trim().replace(/\s+/g, ' ').slice(0, 60), category: category, createdAt: atDay(day, base) });
     if (aiFilledBy) rec.via = aiFilledBy;
-    var followDemo = isDemo() && !!aiFilledBy;
-    if (followDemo) { state.demoEntryId = rec.id; setHistoryType('all'); setQuery(''); }
-    if (fromQuickForm) $('quickPhrase').value = '';
-    state.flashId = rec.id;
-    state.viewMonth = monthKey(when);
-    $('member').value = member;
-    commit();
-    $('amount').value = ''; $('note').value = ''; $('aiText').value = '';
-    aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false; setAiStatus('');
-    if (catEl) catEl.checked = false;
-    renderCatSuggest();
-    renderNameChips();
-    toast(editing ? 'Жазба өзгертілді' : (type === 'income' ? 'Кіріс қосылды: +' : 'Шығыс қосылды: −') + fmtNum(amount) + NB + '₸');
-    closeEntry();
-    if (followDemo) goTo('histCard');
+    finishReviewed([rec], !!editing);
   });
 
   /* ---------- delete ---------- */
@@ -1739,25 +2014,25 @@
   dlg.addEventListener('close', function () {
     var id = state.pendingDelete; state.pendingDelete = null;
     if (dlg.returnValue !== 'ok' || !id) return;
-    var list = records(), idx = list.findIndex(function (r) { return r.id === id; });
-    if (idx < 0) return;
-    list.splice(idx, 1); commit(); toast('Жазба жойылды');
+    if (records().some(function (r) { return r.id === id; }) && saveItems([{ id: id, value: null }])) toast('Жазба жойылды');
   });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close('cancel'); });
 
   /* ---------- demo ---------- */
   function resetForm() {
     cancelParse(); stopVoice(); aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false;
+    singleFields();
     $('quickPhrase').value = ''; $('aiText').value = ''; $('amount').value = ''; $('member').value = ''; $('note').value = '';
     $('tExpense').checked = true;
     document.querySelectorAll('input[name="cat"]').forEach(function (el) { el.checked = false; });
     fillForm(null); setAiStatus(''); renderAiMode();
   }
   function resetView() {
-    setHistoryType('all'); state.histScope = null; state.query = ''; state.histLimit = HIST_PAGE; state.demoEntryId = null; state.activeCat = null;
+    setHistoryType('all'); state.histScope = null; state.query = ''; state.histLimit = HIST_PAGE; state.demoEntryId = null; state.demoBatchIds = []; state.activeCat = null;
     state.editingGoal = false; state.viewMonth = nowKey(); state.bellSeen = ''; state.flashId = null;
   }
   function enterDemo(quiet) {
+    if (!isDemo()) state.demoReturn = state.mode;
     state.mode = 'demo'; state.demo = buildDemo(); state.demoGoal = { name: 'Үйге бастапқы жарна', target: 5000000 }; state.demoFlags = { read: true };
     state.demoLimits = { food: 150000, transport: 40000, home: 250000, other: 50000 };
     state.demoReminders = buildDemoReminders();
@@ -1766,21 +2041,22 @@
   }
   function exitDemo() {
     endTour();
-    state.mode = 'personal'; state.demo = []; state.personal = readStore(); state.goal = readGoal(); state.flags = readFlags();
+    state.mode = state.demoReturn === 'family' && FamilyRoom.status().active ? 'family' : 'personal'; state.demo = []; state.personal = readStore(); state.goal = readGoal(); state.flags = readFlags();
     state.limits = readLimits(); state.reminders = readReminders(); state.demoLimits = {}; state.demoReminders = [];
     resetView(); resetForm(); resetChat(); setQuery(''); render();
     var address = new URL(window.location.href);
     if (address.searchParams.has('demo')) { address.searchParams.delete('demo'); history.replaceState(null, '', address.href); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    toast('Өз бюджетіңізге оралдыңыз');
+    toast(isFamily() ? 'Ортақ бюджетке оралдыңыз' : 'Өз бюджетіңізге оралдыңыз');
   }
   $('exitDemoBtn').addEventListener('click', exitDemo);
-  function startAiDemo() {
+  function startAiDemo(useBatch) {
     endTour();
     if (!isDemo()) enterDemo(true);
-    openEntry(null, true); $('aiText').value = EXAMPLES[0].text; runAiFill();
+    openEntry(null, true); $('aiText').value = EXAMPLES[useBatch === true ? 3 : 0].text; runAiFill();
   }
   $('askAboutEntry').addEventListener('click', function () {
+    if (state.demoBatchIds.length > 1) { showHistoryScope({ ids: state.demoBatchIds.slice() }); return; }
     var rec = records().find(function (r) { return r.id === state.demoEntryId; });
     if (!rec) return;
     setView(monthKey(new Date(rec.createdAt)));
@@ -1833,6 +2109,7 @@
     cancelParse();
     var editingRec = rec && rec.id && rec.type ? rec : null;
     if (editingRec || state.editingId) {
+      singleFields();
       $('aiText').value = ''; setAiStatus(''); aiFilledBy = null; appliedPhrase = ''; fromQuickForm = false;
     }
     fillForm(editingRec);
@@ -1893,6 +2170,7 @@
     if (act === 'add') openEntry();
     else if (act === 'demo') enterDemo();
     else if (act === 'settings') { closeMenu(); openSettings(); }
+    else if (act === 'family') { closeMenu(); openFamily(); }
     else if (act === 'help') { closeMenu(); openHelp(); }
     else if (act === 'limits') openLimits();
     else if (act === 'add-reminder') openReminderForm();
@@ -2050,7 +2328,16 @@
   fillForm(null);
   render();
   spy();
-  if (new URLSearchParams(window.location.search).get('demo') === 'ai') startAiDemo();
+  var params = new URLSearchParams(location.search), demoParam = params.get('demo');
+  invited = inviteFragment(location.hash);
+  if (invited) history.replaceState(null, '', location.pathname + location.search);
+  FamilyRoom.subscribe(updateFamily);
+  FamilyRoom.resume().catch(function (err) { if (invited || params.has('family')) toast(roomError(err.code), true); }).finally(function () {
+    roomReady = true;
+    if (FamilyRoom.status().active && readJSON(roomModeKey, 'family') === 'family') selectBudget('family');
+    if (invited || params.get('family') === '1') openFamily();
+    else if (demoParam === 'ai' || demoParam === 'batch') startAiDemo(demoParam === 'batch');
+  });
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     navigator.serviceWorker.register('./sw.js').catch(function () { /* The online app also works without a cache. */ });
   }

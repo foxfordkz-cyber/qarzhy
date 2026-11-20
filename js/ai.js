@@ -63,7 +63,9 @@ var OtbasyAI = (function () {
     'home|телефонға төледім', 'home|балансты толтырдым', 'home|шкаф', 'home|шкаф сатып алдық', 'home|кереует', 'home|үстел орындық',
     'other|балабақшаға төледі', 'other|курсқа төлем', 'other|дәріге жұмсадым', 'other|оплатил садик', 'other|сыйлыққа жұмсадым', 'other|сыйлық алдым',
     'other|кроссовки', 'other|аяқ киім сатып алдым', 'other|дәрігерге төледік', 'other|шаштаразға төледім',
-    'food|колбаса', 'food|ірімшік пен шұжық', 'food|сыр'
+    'food|колбаса', 'food|ірімшік пен шұжық', 'food|сыр',
+    'food|яблоки и груши', 'food|килограмм яблок', 'food|бананы и апельсины',
+    'food|алма мен алмұрт', 'food|базардан алма алдым', 'food|өлшенген жемістер'
   ];
 
   function lower(s) { try { return s.toLocaleLowerCase('kk'); } catch (e) { return s.toLowerCase(); } }
@@ -119,6 +121,8 @@ var OtbasyAI = (function () {
 
   /* amount: "12 500", "12500 ₸", "12,5 мың", "12к", "1,2 млн", "5 мыңға" */
   var AMOUNT_RE = /(\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d{1,3}(?:[.,]\d{3}){2,}|\d+)([.,]\d+)?(?:\s*(млн|миллион[а-я]*|мың[а-яәғқңөұүһі]*|тыс(?:яч[а-я]*)?\.?|[кk](?!\p{L})))?/giu;
+  var QUANTITY_AFTER = /^\s*(?:%|(?:кг|kg|г|g|гр|грамм\p{L}*|килограм\p{L}*|мл|ml|л|литр\p{L}*|шт|штук\p{L}*|дана\p{L}*|адам|человек|процент\p{L}*|пайыз\p{L}*)(?!\p{L}))/iu;
+  var COUNTED_ITEMS = /^\s+(?:яблок|груш|банан|билет|бутыл|бухан|пачк|пакет|упаков|бөтелке|қаптама)\p{L}*/iu;
   var numerals = new Map();
   [
     ['жарты жарым', 0.5], ['полтора полторы', 1.5],
@@ -152,7 +156,7 @@ var OtbasyAI = (function () {
       }
       var amount = Math.round(total + part), after = text.slice(end);
       var currency = /^\s*(?:теңге|тенге|тг|₸)/iu.test(after);
-      if (!/^\s*(?:кг|килограм|литр|шт|дана|адам|человек)/iu.test(after)) {
+      if (!QUANTITY_AFTER.test(after)) {
         var lastWord = group[group.length - 1];
         amounts.push({ value: amount, start: start, end: end, marked: currency || lastScale < Infinity,
           scale: lastWord >= 1000 ? lastWord : 0, shortUnmarked: !currency && amount < 100 });
@@ -167,21 +171,23 @@ var OtbasyAI = (function () {
     }
     finish(); return amounts;
   }
-  function parseAmount(text) {
+  function amountCandidates(text) {
     var candidates = [], m;
     // Preserve offsets while excluding dates, times and fuel grades from currency candidates.
     var numbers = text.replace(/\d{1,4}[./-]\d{1,2}[./-]\d{2,4}|\d{1,2}:\d{2}|[АA][ИI][- ]?\d{2,3}/gi, function (s) { return ' '.repeat(s.length); });
     AMOUNT_RE.lastIndex = 0;
     while ((m = AMOUNT_RE.exec(numbers))) {
       var before = text.slice(0, m.index), after = text.slice(AMOUNT_RE.lastIndex);
-      if (/[\p{L}\d−-]$/u.test(before) || /^\s*(?:кг|килограм|литр|шт|дана|адам|человек)/iu.test(after)) continue;
+      if (/[\p{L}\d−-]$/u.test(before) || QUANTITY_AFTER.test(after)) continue;
       var unit = lower(m[3] || '');
       var fraction = m[2] ? m[2].slice(1) : '';
       var thousandsGroup = !unit && fraction.length === 3;
       var scale = /^(млн|миллион)/.test(unit) ? 1e6 : unit ? 1000 : 0;
       var n = Number(m[1].replace(/[\s.,]/g, '') + (fraction ? (thousandsGroup ? '' : '.') + fraction : ''));
-      n = Math.round(n * (scale || 1));
-      if (n > 0 && Number.isSafeInteger(n)) candidates.push({ value: n, start: m.index, end: AMOUNT_RE.lastIndex,
+      // Preserve fractional tenge as evidence. The ledger accepts only whole-tenge amounts.
+      n = Number((n * (scale || 1)).toFixed(6));
+      if (!unit && n <= 100 && COUNTED_ITEMS.test(after)) continue;
+      candidates.push({ value: n, start: m.index, end: AMOUNT_RE.lastIndex,
         scale: scale, marked: !!unit || /^\s*(?:₸|теңге|тенге|тг|тңг|-(?:ға|ге|қа|ке))/iu.test(after) });
     }
     var remaining = numbers.split('');
@@ -196,10 +202,12 @@ var OtbasyAI = (function () {
       } else combined.push(a);
     });
     // In «екі нан», two describes a quantity, not a price.
-    candidates = combined.filter(function (a) { return !a.shortUnmarked; });
-    var marked = candidates.filter(function (a) { return a.marked; });
-    var pool = marked.length ? marked : candidates;
-    return pool.length === 1 ? pool[0] : null;
+    return combined.filter(function (a) { return !a.shortUnmarked; });
+  }
+  function parseAmount(text) {
+    text = String(text || '');
+    var amounts = amountCandidates(text);
+    return !amountIssue(text, amounts) && amounts.length === 1 ? amounts[0] : null;
   }
 
   var CASE_ENDINGS = ['ның', 'нің', 'дың', 'дің', 'тың', 'тің', 'ға', 'ге', 'қа', 'ке', 'на', 'не', 'а', 'е', 'ды', 'ді', 'ты', 'ті', 'ны', 'ні',
@@ -221,14 +229,17 @@ var OtbasyAI = (function () {
     return t;
   }
   var NOT_NAMES = /^(магнум|small|смолл|анвар|каспи|kaspi|яндекс|yandex|indrive|wolt|glovo|onay|онай|аи|kcell|tele2|бейлайн|beeline|netflix|алматы|астана|шымкент)/i;
-  var budgetWords = new Set(['сегодня', 'вчера', 'бүгін', 'кеше', 'покупка', 'получил', 'получила']);
+  var budgetWords = new Set(['сегодня', 'вчера', 'завтра', 'позавчера', 'бүгін', 'кеше', 'ертең', 'покупка', 'покупки', 'траты', 'расходы', 'получил', 'получила', 'потом', 'затем', 'сосын', 'сдача', 'возврат', 'скидка', 'итого', 'дал', 'дала', 'кешегі', 'мне', 'нам', 'она', 'они', 'маған', 'олар']);
   TRAIN.forEach(function (line) { words(line.split('|')[1]).forEach(function (word) { budgetWords.add(word); }); });
+  function possibleNewName(token) {
+    return /^[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі]{2,}$/.test(token) && !NOT_NAMES.test(token) &&
+      !budgetWords.has(lower(token)) && !budgetWords.has(lower(stripEnding(token))) && !FUNC[lower(token)] && STOP.indexOf(lower(token)) === -1;
+  }
 
-  function parsePhrase(text, knownNames) {
+  function parseRecord(text, knownNames, amt) {
     var src = String(text || '').trim();
     var res = { type: null, amount: null, member: null, category: null, note: '', confidence: 0, source: 'local' };
     if (!src) return res;
-    var amt = parseAmount(src);
     if (amt) res.amount = amt.value;
     var rest = amt ? (src.slice(0, amt.start) + ' ' + src.slice(amt.end)) : src;
     rest = rest.replace(/(теңге[а-яәғқңөұүһі]*|тенге[а-я]*|тг|₸)/gi, ' ').replace(/(^|\s)-?(ға|ге|қа|ке|на|не|ден|дан|тан|тен)(?=\s|$)/gi, ' ');
@@ -236,21 +247,22 @@ var OtbasyAI = (function () {
     var names = (knownNames || []).filter(Boolean);
     var nameTok = null;
     for (var i = 0; i < tokens.length && !res.member; i++) { var hit = matchName(tokens[i], names); if (hit) { res.member = hit; nameTok = tokens[i]; } }
-    if (!res.member) {
+    if (!res.member && tokens.length > 1) {
       for (var j = 0; j < tokens.length; j++) {
         var tk = tokens[j];
-        if (/^[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі]{2,}$/.test(tk) && !NOT_NAMES.test(tk) && !budgetWords.has(lower(tk)) && !budgetWords.has(lower(stripEnding(tk))) && !FUNC[lower(tk)]) { res.member = stripEnding(tk); nameTok = tk; break; }
+        if (possibleNewName(tk)) { res.member = stripEnding(tk); nameTok = tk; break; }
       }
     }
     var noteText = rest;
     if (nameTok) noteText = noteText.replace(nameTok, ' ');
     noteText = noteText.replace(/\s+/g, ' ').replace(/^[\s,.;:-]+|[\s,.;:-]+$/g, '');
-    var pred = predict(noteText);
+    var pred = predict(cleanNote(noteText));
     res.confidence = pred.prob;
     if (pred.prob >= AUTO_THRESHOLD) {
       res.type = pred.label === 'income' ? 'income' : 'expense';
       res.category = res.type === 'expense' ? pred.label : null;
     }
+    if (RECEIVED_REFUND.test(src)) { res.type = 'income'; res.category = null; }
     res.note = cleanNote(noteText);
     return res;
   }
@@ -267,5 +279,153 @@ var OtbasyAI = (function () {
     var p = predict(text, ['food', 'transport', 'home', 'other']);
     return p.known ? { category: p.label, prob: p.prob } : null;
   }
-  return { LABELS: LABELS, AUTO_THRESHOLD: AUTO_THRESHOLD, predict: predict, parsePhrase: parsePhrase, parseAmount: parseAmount, matchName: matchName, suggestCategory: suggestCategory, trainSize: TRAIN.length, _train: train, _features: features };
+
+  /* Whole-tenge ledger entries. Compare transfers, change and totals before looking
+     for an "and" between numbers so that one payment cannot become two purchases. */
+  var CHANGE = /(?:^|[^\p{L}])(?:сдач(?:а|у|и|ей)|қайтарым\p{L}*|қалған(?:ын|ын да) қайтар\p{L}*)(?!\p{L})/iu;
+  var PRICE_RELATION = /скидк|жеңілдік|итого|всего|барлығы|жиыны|вместо|орнына|возврат|вернул|қайтар|кешбэк|кэшбэк|остаток|қалғаны|в том числе|из них|соның ішінде|стоимост|стоил|цена|бағасы|доплат|предоплат|рассрочк|бөліп төле|[=+×]/iu;
+  var RECEIVED_REFUND = /получил[аи]?\s+возврат|приш[её]л\s+возврат|вернули\s+(?:мне\s+|нам\s+)?деньги|ақша\p{L}*\s+қайтарылды/iu;
+  var UNIT_PRICE = /(?:^|\s)по\s+(?:\d|[а-я]+(?:надцать|десят|сот))|(?:₸|теңге|тенге|тг)\s*(?:\/|за\s+)(?:кг|килограмм|шт|дана|литр)|әрқайсысы/iu;
+  function amountIssue(text, amounts) {
+    if (CHANGE.test(text) && !/сдач[аиу]\s+(?:квартир|жиль|экзамен)/iu.test(text)) return 'change';
+    if (UNIT_PRICE.test(text) || /(?:^|[^\p{L}\d])[-−]\s*\d/u.test(text) || amounts.some(function (a) { return !(a.value > 0 && Number.isSafeInteger(a.value)); })) return 'ambiguous';
+    if (amounts.length > 1 && (PRICE_RELATION.test(text) || /[«"][^»"]*\d[^»"]*[»"]/u.test(text))) return 'ambiguous';
+    // A discount alone is neither a bill nor income.
+    if (/^\s*(?:скидк[ауи]|жеңілдік)\s+(?:на\s+)?\d/iu.test(text)) return 'ambiguous';
+    if (/возврат|қайтарылды/iu.test(text) && !RECEIVED_REFUND.test(text)) return 'ambiguous';
+    return null;
+  }
+
+  var DATE_WORD = /(^|[^\p{L}])(позавчера|вчера|сегодня|завтра|алдыңғы күні|кеше|бүгін|ертең)(?!\p{L})/giu;
+  var DATE_OFFSET = { позавчера: -2, 'алдыңғы күні': -2, вчера: -1, кеше: -1, сегодня: 0, бүгін: 0, завтра: 1, ертең: 1 };
+  var CALENDAR_DATE = /(^|\D)(?:(\d{4})-(\d{2})-(\d{2})|(\d{1,2})[./](\d{1,2})[./](\d{4}))(?!\d)/g;
+  function dateString(d) {
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+  }
+  function datedClause(text, today, fallbackDate) {
+    var dates = [];
+    var clean = text.replace(DATE_WORD, function (_, prefix, word) {
+      dates.push(dateString(new Date(today.getFullYear(), today.getMonth(), today.getDate() + DATE_OFFSET[lower(word)])));
+      return prefix + ' ';
+    }).replace(CALENDAR_DATE, function (_, prefix, isoY, isoM, isoD, d, m, y) {
+      var year = Number(isoY || y), month = Number(isoM || m), day = Number(isoD || d);
+      var date = new Date(year, month - 1, day);
+      dates.push(year === date.getFullYear() && month === date.getMonth() + 1 && day === date.getDate() ? dateString(date) : '');
+      return prefix + ' ';
+    }).trim();
+    var date = dates.length ? dates[0] : fallbackDate;
+    return { clean: clean, date: date, explicit: dates.length > 0, conflict: !date || dates.some(function (v) { return v !== date; }) };
+  }
+
+  var DATE_OR_TIME = /\d{1,4}[./-]\d{1,2}[./-]\d{2,4}|\d{1,2}:\d{2}/g;
+  var CLAUSE_BREAK = /[,;.!?\n]+(?:[ \t]*(?:а|и|ал|және|сосын|кейін|потом|затем)(?!\p{L}))*[ \t]*|[ \t]+(?:а|и|ал|және|сосын|кейін|потом|затем)(?=\s)\s*/giu;
+  var ACTION = /(?:^|[^\p{L}])(?:купил\p{L}*|заплатил\p{L}*|оплатил\p{L}*|потратил\p{L}*|получил\p{L}*|жұмса\p{L}*|төле\p{L}*|сатып\s+ал\p{L}*)/iu;
+  function findBreaks(text, amounts) {
+    var masked = text.replace(DATE_OR_TIME, function (s) { return ' '.repeat(s.length); });
+    var breaks = [];
+    for (var m of masked.matchAll(CLAUSE_BREAK)) {
+      if (amounts.some(function (a) { return m.index > a.start && m.index < a.end; })) continue;
+      var delimiter = m[0], strong = /[;.!?\n]/.test(delimiter);
+      var weight = strong ? 4 : /[,]/.test(delimiter) ? 3 : /(?:потом|затем|сосын|кейін|(?:^|\s)(?:а|ал)(?:\s|$))/iu.test(delimiter) ? 2 : 1;
+      breaks.push({ start: m.index, end: m.index + delimiter.length, weight: weight, strong: strong, delimiter: delimiter });
+    }
+    return breaks;
+  }
+  var OTHER_SUBJECT = /(?<!\p{L})(?:он|она|они|я|мы|ол|олар|біз|друг|подруга|әпкем|інім|ағам|мама|папа|әкем|анам)(?!\p{L})/iu;
+  function mentionsMember(text, names) {
+    return (text.match(/\p{L}+/gu) || []).some(function (t) { return !!matchName(t, names); });
+  }
+  function multiplePeople(text, names) {
+    var tokens = text.match(/\p{L}+/gu) || [];
+    if (new Set(tokens.map(function (t) { return matchName(t, names); }).filter(Boolean)).size > 1) return true;
+    return tokens.some(function (t, i) {
+      if (i < 1 || i + 1 >= tokens.length || !/^(?:и|және|мен|пен|бен)$/iu.test(t)) return false;
+      return (matchName(tokens[i - 1], names) || possibleNewName(tokens[i - 1])) &&
+        (matchName(tokens[i + 1], names) || possibleNewName(tokens[i + 1]));
+    });
+  }
+  function spokenSubjectBreak(text, first, second, names) {
+    var gap = text.slice(first.end, second.start), candidates = [];
+    for (var t of gap.matchAll(/\p{L}+/gu)) {
+      var name = names.some(function (n) { return lower(n) === lower(t[0]); }) || possibleNewName(t[0]);
+      if (!name || /(?:^|\s)(?:за|для|от|у|к|с|про)\s*$/iu.test(gap.slice(0, t.index))) continue;
+      var start = first.end + t.index;
+      // Voice transcripts often omit punctuation. Require a new named actor and verb.
+      if (ACTION.test(text.slice(start, second.end)) || ACTION.test(text.slice(second.end).split(/[,;.!?\n]/u, 1)[0])) {
+        candidates.push({ start: start, end: start, strong: true, weight: 1 });
+      }
+    }
+    return candidates;
+  }
+  function unresolved(text, today, issue) {
+    var dated = datedClause(text, today, dateString(today)), row = parseRecord(dated.clean, [], null);
+    row.member = null; row.category = null; row.type = null; row.confidence = 0;
+    row.text = text; row.date = dated.conflict ? dateString(today) : dated.date; row.dateExplicit = dated.explicit && !dated.conflict;
+    return { entries: [row], issue: issue };
+  }
+  function parseEntries(text, knownNames, now) {
+    var src = String(text || '').trim();
+    if (!src) return { entries: [], issue: null };
+    var names = (knownNames || []).filter(Boolean);
+    var today = now == null ? new Date() : new Date(now);
+    // Mask list ordinals so their digits cannot become prices. Keep original offsets.
+    var marked = src.replace(/(^|[;:\n])([ \t]*\d{1,2}[.)][ \t]+)/g, function (_, sep, ordinal) { return sep + ' '.repeat(ordinal.length); });
+    var amounts = amountCandidates(marked), issue = amountIssue(marked, amounts);
+    if (issue) return unresolved(src, today, issue);
+    if (amounts.length > 8) return unresolved(src, today, 'limit');
+    var breaks = findBreaks(marked, amounts), cuts = [];
+    for (var i = 1; i < amounts.length; i++) {
+      var gap = breaks.filter(function (b) { return b.start >= amounts[i - 1].end && b.end <= amounts[i].start; });
+      if (!gap.length) gap = spokenSubjectBreak(marked, amounts[i - 1], amounts[i], names);
+      if (!gap.length) return unresolved(src, today, 'ambiguous');
+      var best = Math.max.apply(null, gap.map(function (b) { return b.weight; }));
+      var choices = gap.filter(function (b) { return b.weight === best; });
+      if (choices.length !== 1) return unresolved(src, today, 'ambiguous');
+      cuts.push(choices[0]);
+    }
+    var entries = [], start = 0, date = dateString(today), dateExplicit = false;
+    for (var j = 0; j <= cuts.length; j++) {
+      var end = j < cuts.length ? cuts[j].start : src.length;
+      var clause = marked.slice(start, end), dated = datedClause(clause, today, date);
+      // An overt second action without an amount needs clarification too. Keep its text.
+      var lostAction = breaks.some(function (b) {
+        if (b.start < start || b.end > end) return false;
+        var left = marked.slice(start, b.start), right = marked.slice(b.end, end);
+        if (!left.trim() || !right.trim()) return false;
+        var priceOnLeft = amounts.some(function (a) { return a.start >= start && a.end <= b.start; });
+        var unpriced = priceOnLeft ? right : left;
+        var priced = priceOnLeft ? left : right;
+        var body = datedClause(unpriced, today, date).clean.replace(/[^\p{L}]+/gu, ' ').trim();
+        if (b.strong && body && !/^(?:покупки|расходы|траты|шығындар)$/iu.test(body)) return true;
+        return (body.split(' ').length > 1 && mentionsMember(unpriced, names) && mentionsMember(priced, names)) ||
+          (ACTION.test(unpriced) && (ACTION.test(priced) || mentionsMember(priced, names) || (priceOnLeft && mentionsMember(unpriced, names))));
+      });
+      if (dated.conflict || lostAction) return unresolved(src, today, 'ambiguous');
+      var clauseAmounts = amountCandidates(dated.clean);
+      if (clauseAmounts.length > 1) return unresolved(src, today, 'ambiguous');
+      var price = clauseAmounts[0];
+      var row = parseRecord(dated.clean, names, price);
+      var joint = multiplePeople(dated.clean, names);
+      if (joint) row.member = null;
+      if (cuts.length && !row.note) return unresolved(src, today, 'ambiguous');
+      if (!row.member && !joint && j && !cuts[j - 1].strong && !OTHER_SUBJECT.test(dated.clean)) row.member = entries[j - 1].member;
+      dateExplicit = dated.explicit || dateExplicit;
+      row.text = src.slice(start, end).trim(); row.date = dated.date; row.dateExplicit = dateExplicit;
+      entries.push(row); date = row.date;
+      if (j < cuts.length) start = cuts[j].end;
+    }
+    return { entries: entries, issue: null };
+  }
+  function parsePhrase(text, knownNames) {
+    // Legacy callers edit one record. Never choose one price out of a multi-entry input.
+    var result = parseEntries(text, knownNames);
+    if (result.entries.length === 1) {
+      var row = result.entries[0];
+      return { type: row.type, amount: row.amount, member: row.member, category: row.category, note: row.note, confidence: row.confidence, source: row.source };
+    }
+    var empty = parseRecord('', [], null);
+    if (result.entries.length) empty.note = cleanNote(String(text));
+    return empty;
+  }
+  return { LABELS: LABELS, AUTO_THRESHOLD: AUTO_THRESHOLD, predict: predict, parsePhrase: parsePhrase, parseEntries: parseEntries, parseAmount: parseAmount, matchName: matchName, suggestCategory: suggestCategory, trainSize: TRAIN.length, _train: train, _features: features };
 })();
