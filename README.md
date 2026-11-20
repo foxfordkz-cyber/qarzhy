@@ -57,7 +57,7 @@ The [pilot](https://foxfordkz-cyber.github.io/qarzhy/pilot/) has six sample tran
 - `js/budget-query.js` — interpretation of local ledger questions.
 - `ai/eval.js`, `ai/metrics.txt` — model evaluation.
 - Run the parser, synchronization, timing and API checks with Node.js 22.13 or newer using `node --test ai/*.test.js pilot/*.test.js service/*.test.mjs`.
-- `js/family-room.js` handles client-side encryption and offline edits. `service/api.mjs` and `service/schema.sql` contain the deployed relay handler and its D1 schema. `js/service-config.js` selects the relay.
+- `js/family-room.js` handles client-side encryption and offline edits. The relay source is in `service/`. To run your own instance, apply `schema.sql` to a D1 database, bind it to the worker as `DB`, and use `worker.mjs` as the entry point. Set the allowed frontend origin in `api.mjs` and the relay URL in `js/service-config.js`.
 - `apps-script/` — Gemini proxy for Google Apps Script and setup steps.
 
 Personal data is stored in the browser's `localStorage` under `otbasy-budget:v1:*`
